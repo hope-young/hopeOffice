@@ -33,12 +33,6 @@ const orchestrator = new Orchestrator({
   getModel: () => useSettingsStore.getState().model,
 })
 
-orchestrator.subscribe((state) => {
-  // Push every state change into the store. Components select the
-  // slice they care about via the Zustand selector.
-  useChatStore.setState({ state })
-})
-
 // ---------- Store ----------
 
 export type ChatState = {
@@ -54,3 +48,15 @@ export const useChatStore = create<ChatState>(() => ({
   abort: () => orchestrator.abort(),
   reset: () => orchestrator.reset(),
 }))
+
+// Wire the orchestrator's pub/sub into the store AFTER the store
+// exists. The earlier version put this above the `create()` call and
+// tripped a TDZ: the subscribe callback closes over useChatStore,
+// which isn't initialised until line 18 — but the subscribe() on
+// line 17 fires synchronously with the initial state, throwing
+// "Cannot access 'useChatStore' before initialization".
+orchestrator.subscribe((state) => {
+  // Push every state change into the store. Components select the
+  // slice they care about via the Zustand selector.
+  useChatStore.setState({ state })
+})
