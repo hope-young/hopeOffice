@@ -197,7 +197,7 @@ type HistoryStore = {
 
 ## 10. i18n
 
-自写最小化。3 locale：`en` `zh` `he`。
+自写最小化。2 locale：`zh-CN`（首选）`en`。
 - `registry.ts` 注册 locale + fallback
 - `context.tsx` React context 暴露 `t(key, vars)`
 - `locales/<lang>.json` 扁平 key（`chat.welcomeTitle`）
@@ -234,7 +234,7 @@ npm run build        tsc + vite build → dist/
 - [ ] **W25-W26** Word 技能（先接 Word，验证整条链）
 - [ ] **W26** Excel + PowerPoint 技能
 - [ ] **W27** MCP 接入
-- [ ] **W27** i18n (en/zh/he) + 完整设置面板
+- [ ] **W27** i18n (zh-CN/en) + 完整设置面板
 - [ ] **W28+** 多会话、历史面板、Slash 命令、导出 md
 
 ## 14. 风险
