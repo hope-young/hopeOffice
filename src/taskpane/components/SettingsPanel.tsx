@@ -1,17 +1,68 @@
 /**
- * SettingsPanel — provider, API key, model. Persisted via the
- * Zustand settings store (localStorage). Phase 4 ships Anthropic
- * only; OpenAI / OpenAI-compatible slots are visible but disabled
- * with a hint about Phase 7.
+ * SettingsPanel — provider, API key, model, base URL. Persisted
+ * via the Zustand settings store (localStorage).
+ *
+ * Model list is now dynamic: it calls
+ * `listModelsForProvider({providerId, apiKey, baseUrl})` whenever
+ * the relevant inputs change, and falls back to a small local list
+ * when the network call fails. Anthropic and OpenAI (when added in
+ * Phase 7) keep their hardcoded lists — /v1/models is unreliable
+ * on those.
  */
+import { useEffect, useState } from 'react'
 import type { ProviderId } from '@core/providers/registry'
+import { listModelsForProvider } from '@core/providers/registry'
+import type { ModelInfo } from '@core/providers/interface'
 import { useSettingsStore } from '../store/settings'
 
-const ANTHROPIC_MODELS: Array<{ id: string; label: string }> = [
-  { id: 'claude-opus-4-7', label: 'Claude Opus 4.7' },
-  { id: 'claude-sonnet-4-5', label: 'Claude Sonnet 4.5' },
-  { id: 'claude-haiku-4-5', label: 'Claude Haiku 4.5' },
+/** Curated list shown when the live fetch is unavailable (Anthropic). */
+const ANTHROPIC_MODELS: ModelInfo[] = [
+  {
+    id: 'claude-opus-4-7',
+    displayName: 'Claude Opus 4.7',
+    contextWindow: 200_000,
+    maxOutputTokens: 32_000,
+    capabilities: ['vision', 'tools', 'reasoning'],
+  },
+  {
+    id: 'claude-sonnet-4-5',
+    displayName: 'Claude Sonnet 4.5',
+    contextWindow: 200_000,
+    maxOutputTokens: 16_000,
+    capabilities: ['vision', 'tools'],
+  },
+  {
+    id: 'claude-haiku-4-5',
+    displayName: 'Claude Haiku 4.5',
+    contextWindow: 200_000,
+    maxOutputTokens: 8_000,
+    capabilities: ['vision', 'tools'],
+  },
 ]
+
+/** Default model id per provider — used on first load. */
+const DEFAULT_MODEL: Record<ProviderId, string> = {
+  anthropic: 'claude-sonnet-4-5',
+  minimax: 'MiniMax-M3',
+  openai: 'gpt-4o',
+  'openai-compatible': '',
+}
+
+/** Whether the provider has a customisable base URL. */
+const HAS_BASE_URL: Record<ProviderId, boolean> = {
+  anthropic: false,
+  minimax: true,
+  openai: false,
+  'openai-compatible': true,
+}
+
+/** Whether the provider's model list is fetched live. */
+const FETCHES_LIVE_MODELS: Record<ProviderId, boolean> = {
+  anthropic: false,
+  minimax: true,
+  openai: true, // when Phase 7 lands
+  'openai-compatible': true, // when Phase 7 lands
+}
 
 export function SettingsPanel() {
   const providerId = useSettingsStore((s) => s.providerId)
@@ -24,6 +75,60 @@ export function SettingsPanel() {
   const setModel = useSettingsStore((s) => s.setModel)
   const setBaseUrl = useSettingsStore((s) => s.setBaseUrl)
 
+  const [models, setModels] = useState<ModelInfo[]>([])
+  const [modelsLoading, setModelsLoading] = useState(false)
+  const [modelsError, setModelsError] = useState<string | null>(null)
+
+  // Live-fetch the model list when the relevant inputs change.
+  useEffect(() => {
+    let cancelled = false
+    if (!FETCHES_LIVE_MODELS[providerId]) {
+      setModels(providerId === 'anthropic' ? ANTHROPIC_MODELS : [])
+      setModelsLoading(false)
+      setModelsError(null)
+      return
+    }
+    if (!apiKey) {
+      setModels([])
+      setModelsLoading(false)
+      setModelsError(null)
+      return
+    }
+    setModelsLoading(true)
+    setModelsError(null)
+    listModelsForProvider({
+      providerId,
+      apiKey,
+      ...(baseUrl ? { baseUrl } : {}),
+    })
+      .then((ms) => {
+        if (cancelled) return
+        setModels(ms)
+        setModelsLoading(false)
+        // If the currently-selected model isn't in the list, fall
+        // back to the provider's default.
+        if (ms.length > 0 && !ms.some((m) => m.id === model)) {
+          setModel(DEFAULT_MODEL[providerId] || ms[0]!.id)
+        }
+      })
+      .catch((err: unknown) => {
+        if (cancelled) return
+        setModels([])
+        setModelsLoading(false)
+        setModelsError(err instanceof Error ? err.message : String(err))
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [providerId, apiKey, baseUrl, model, setModel])
+
+  const onProviderChange = (next: ProviderId): void => {
+    setProviderId(next)
+    // Switch the model to the new provider's default so the
+    // dropdown stays coherent.
+    setModel(DEFAULT_MODEL[next] || '')
+  }
+
   return (
     <div className="h-full overflow-y-auto p-4 space-y-4 text-sm">
       <h2 className="text-lg font-semibold">Settings</h2>
@@ -35,10 +140,11 @@ export function SettingsPanel() {
         <select
           id="settings-provider"
           value={providerId}
-          onChange={(e) => setProviderId(e.target.value as ProviderId)}
+          onChange={(e) => onProviderChange(e.target.value as ProviderId)}
           className="mt-1 block w-full rounded border border-neutral-300 px-2 py-1"
         >
           <option value="anthropic">Anthropic</option>
+          <option value="minimax">MiniMax (M3)</option>
           <option value="openai" disabled>
             OpenAI (Phase 7)
           </option>
@@ -57,7 +163,7 @@ export function SettingsPanel() {
           type="password"
           value={apiKey}
           onChange={(e) => setApiKey(e.target.value)}
-          placeholder="sk-ant-…"
+          placeholder="sk-ant-… or eyJ…"
           autoComplete="off"
           spellCheck={false}
           className="mt-1 block w-full rounded border border-neutral-300 px-2 py-1 font-mono"
@@ -67,25 +173,7 @@ export function SettingsPanel() {
         </p>
       </div>
 
-      <div>
-        <label className="block font-medium" htmlFor="settings-model">
-          Model
-        </label>
-        <select
-          id="settings-model"
-          value={model}
-          onChange={(e) => setModel(e.target.value)}
-          className="mt-1 block w-full rounded border border-neutral-300 px-2 py-1"
-        >
-          {ANTHROPIC_MODELS.map((m) => (
-            <option key={m.id} value={m.id}>
-              {m.label}
-            </option>
-          ))}
-        </select>
-      </div>
-
-      {providerId === 'openai-compatible' ? (
+      {HAS_BASE_URL[providerId] ? (
         <div>
           <label className="block font-medium" htmlFor="settings-baseurl">
             Base URL
@@ -94,13 +182,53 @@ export function SettingsPanel() {
             id="settings-baseurl"
             value={baseUrl}
             onChange={(e) => setBaseUrl(e.target.value)}
-            placeholder="http://localhost:11434/v1"
+            placeholder="https://api.minimaxi.com/v1"
             autoComplete="off"
             spellCheck={false}
             className="mt-1 block w-full rounded border border-neutral-300 px-2 py-1 font-mono"
           />
+          <p className="mt-1 text-xs text-neutral-500">
+            Leave empty to use the provider default.
+          </p>
         </div>
       ) : null}
+
+      <div>
+        <label className="block font-medium" htmlFor="settings-model">
+          Model
+        </label>
+        <select
+          id="settings-model"
+          value={model}
+          onChange={(e) => setModel(e.target.value)}
+          disabled={modelsLoading || models.length === 0}
+          className="mt-1 block w-full rounded border border-neutral-300 px-2 py-1 disabled:bg-neutral-50 disabled:text-neutral-400"
+        >
+          {modelsLoading ? (
+            <option>Loading…</option>
+          ) : models.length === 0 ? (
+            <option value={model}>{model || '(add API key to load models)'}</option>
+          ) : (
+            models.map((m) => (
+              <option key={m.id} value={m.id}>
+                {m.displayName}
+                {m.contextWindow ? ` (${formatCtx(m.contextWindow)})` : ''}
+              </option>
+            ))
+          )}
+        </select>
+        {modelsError ? (
+          <p className="mt-1 text-xs text-red-600">
+            Could not load model list: {modelsError}
+          </p>
+        ) : null}
+      </div>
     </div>
   )
+}
+
+function formatCtx(tokens: number): string {
+  if (tokens >= 1_000_000) return `${(tokens / 1_000_000).toFixed(1)}M ctx`
+  if (tokens >= 1_000) return `${Math.round(tokens / 1_000)}K ctx`
+  return `${tokens} ctx`
 }
