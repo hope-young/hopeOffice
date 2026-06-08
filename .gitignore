@@ -2,8 +2,14 @@ node_modules
 dist
 .worktrees/
 *.log
+*.tsbuildinfo
 .DS_Store
 Thumbs.db
 
 # one-off commit message scratch file used by AI tooling; never commit
 /.commitmsg
+
+# API keys / provider endpoints — never commit
+.env
+.env.local
+.env.*.local
