@@ -64,11 +64,18 @@ export default defineConfig(({ mode }) => {
       sourcemap: true,
       target: 'es2022',
       rollupOptions: {
-        // The Office manifest points to src/taskpane/index.html, so that is
-        // the real entry. We keep the project root as the Vite root and
-        // build into dist/ preserving the same relative path.
+        // Two HTML entries, both referenced from runtime code:
+        //  - taskpane/index.html  — the manifest's SourceLocation
+        //  - taskpane/executor/iframe.html — the sandbox iframe; loaded
+        //    at runtime by src/taskpane/executor/sandbox.ts as
+        //    /src/taskpane/executor/iframe.html
+        // Build output preserves the same relative paths under dist/.
         input: {
           taskpane: resolve(__dirname, 'src/taskpane/index.html'),
+          'taskpane/executor/iframe': resolve(
+            __dirname,
+            'src/taskpane/executor/iframe.html',
+          ),
         },
       },
     },
