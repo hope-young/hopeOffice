@@ -4,3 +4,6 @@ dist
 *.log
 .DS_Store
 Thumbs.db
+
+# one-off commit message scratch file used by AI tooling; never commit
+/.commitmsg
