@@ -16,7 +16,7 @@ export type Role = 'user' | 'assistant' | 'tool'
 export type Message =
   | { role: 'user'; content: string }
   | { role: 'assistant'; content: string; toolCalls?: ToolCall[] }
-  | { role: 'tool'; toolCallId: string; content: string }
+  | { role: 'tool'; toolCallId: string; toolName: string; content: string }
 
 // ---------- Streaming ----------
 
@@ -26,6 +26,8 @@ export type StreamChunk =
   | { type: 'reasoning-delta'; delta: string } // thinking models
   | { type: 'tool-call-start'; toolCall: ToolCall }
   | { type: 'tool-call-args'; toolCallId: string; delta: unknown } // JSON delta
+  | { type: 'tool-call-result'; toolCallId: string; result: unknown }
+  | { type: 'tool-call-error'; toolCallId: string; error: string }
   | {
       type: 'finish'
       reason: 'stop' | 'tool-calls' | 'length' | 'error'
@@ -84,8 +86,9 @@ export type AgentEvent =
   | { type: 'user-send'; text: string }
   | { type: 'stream-token'; token: string }
   | { type: 'stream-end' }
-  | { type: 'tool-call-start'; tool: string; args: unknown }
-  | { type: 'tool-call-result'; result: unknown }
+  | { type: 'tool-call-start'; toolCall: ToolCall }
+  | { type: 'tool-call-result'; toolCallId: string; result: unknown }
+  | { type: 'tool-call-error'; toolCallId: string; error: string }
   | { type: 'approval-requested'; code: string }
   | { type: 'approval-decided'; approved: boolean }
   | { type: 'error'; error: Error }
