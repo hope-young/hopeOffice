@@ -1,0 +1,499 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<OfficeApp
+  xmlns="http://schemas.microsoft.com/office/appforoffice/1.1"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xmlns:bt="http://schemas.microsoft.com/office/officeappbasictypes/1.0"
+  xmlns:ov="http://schemas.microsoft.com/office/taskpaneappversionoverrides"
+  xsi:type="TaskPaneApp">
+
+  <Id>2c1e8a4d-3f7b-4d6e-9a12-b8c5d7f1e203</Id>
+  <Version>0.1.0.0</Version>
+  <ProviderName>hope_young</ProviderName>
+  <DefaultLocale>en-US</DefaultLocale>
+  <DisplayName DefaultValue="hope-Office">
+    <Override Locale="zh-CN" Value="hope-Office" />
+  </DisplayName>
+  <Description DefaultValue="AI assistant for Word, Excel, and PowerPoint. Local-first, BYO API key.">
+    <Override Locale="zh-CN" Value="Word/Excel/PPT 的 AI 助手。本地优先，自带 API key。" />
+  </Description>
+  <IconUrl DefaultValue="https://localhost:3721/assets/icon-32.png" />
+  <HighResolutionIconUrl DefaultValue="https://localhost:3721/assets/icon-64.png" />
+  <SupportUrl DefaultValue="https://github.com/hope-young/hopeOffice/issues" />
+
+  <AppDomains>
+    <AppDomain>https://localhost:3721</AppDomain>
+  </AppDomains>
+
+  <Hosts>
+    <Host Name="Document" />
+    <Host Name="Workbook" />
+    <Host Name="Presentation" />
+  </Hosts>
+
+  <DefaultSettings>
+    <SourceLocation DefaultValue="https://localhost:3721/src/taskpane/index.html" />
+  </DefaultSettings>
+
+  <Permissions>ReadWriteDocument</Permissions>
+
+  <VersionOverrides
+    xmlns="http://schemas.microsoft.com/office/taskpaneappversionoverrides/1.0"
+    xsi:type="VersionOverridesV1_0">
+
+    <Description resid="Description" />
+
+    <Requirements>
+      <Sets DefaultMinVersion="1.0">
+        <Set Name="WordApi" MinVersion="1.4" />
+        <Set Name="ExcelApi" MinVersion="1.4" />
+        <Set Name="PowerPointApi" MinVersion="1.4" />
+        <Set Name="CustomFunctions" MinVersion="1.1" />
+      </Sets>
+    </Requirements>
+
+    <Hosts>
+
+      <!-- ====================== Word ====================== -->
+      <Host xsi:type="Document">
+        <Runtimes>
+          <Runtime resid="Taskpane.Url" />
+        </Runtimes>
+        <DesktopFormFactor>
+          <GetStarted>
+            <Title resid="GetStarted.Title" />
+            <Description resid="GetStarted.Description" />
+            <LearnMoreUrl resid="GetStarted.LearnMoreUrl" />
+          </GetStarted>
+          <FunctionFile resid="Taskpane.Url" />
+          <ExtensionPoint xsi:type="CustomTab">
+            <CustomTab id="hopeOfficeTab">
+              <Group id="grpMain">
+                <Label resid="grpMainLabel" />
+                <Icon>
+                  <bt:Image size="16" resid="Icon.16x16" />
+                  <bt:Image size="32" resid="Icon.32x32" />
+                  <bt:Image size="80" resid="Icon.80x80" />
+                </Icon>
+                <Control xsi:type="Button" id="openTaskPane">
+                  <Label resid="openTaskPane.Label" />
+                  <Supertip>
+                    <Title resid="openTaskPane.Label" />
+                    <Description resid="openTaskPane.Tooltip" />
+                  </Supertip>
+                  <Icon>
+                    <bt:Image size="16" resid="Icon.16x16" />
+                    <bt:Image size="32" resid="Icon.32x32" />
+                    <bt:Image size="80" resid="Icon.80x80" />
+                  </Icon>
+                  <Action xsi:type="ShowTaskpane">
+                    <TaskpaneId>hopeOfficeTaskPane</TaskpaneId>
+                    <SourceLocation resid="Taskpane.Url" />
+                    <Title resid="openTaskPane.Label" />
+                  </Action>
+                </Control>
+                <Control xsi:type="Button" id="newChat">
+                  <Label resid="newChat.Label" />
+                  <Supertip>
+                    <Title resid="newChat.Label" />
+                    <Description resid="newChat.Tooltip" />
+                  </Supertip>
+                  <Icon>
+                    <bt:Image size="16" resid="Icon.16x16" />
+                    <bt:Image size="32" resid="Icon.32x32" />
+                    <bt:Image size="80" resid="Icon.80x80" />
+                  </Icon>
+                  <Action xsi:type="ExecuteFunction">
+                    <FunctionName>newChat</FunctionName>
+                  </Action>
+                </Control>
+              </Group>
+              <Group id="grpHistory">
+                <Label resid="grpHistoryLabel" />
+                <Icon>
+                  <bt:Image size="16" resid="Icon.16x16" />
+                  <bt:Image size="32" resid="Icon.32x32" />
+                  <bt:Image size="80" resid="Icon.80x80" />
+                </Icon>
+                <Control xsi:type="Button" id="openHistory">
+                  <Label resid="openHistory.Label" />
+                  <Supertip>
+                    <Title resid="openHistory.Label" />
+                    <Description resid="openHistory.Tooltip" />
+                  </Supertip>
+                  <Icon>
+                    <bt:Image size="16" resid="Icon.16x16" />
+                    <bt:Image size="32" resid="Icon.32x32" />
+                    <bt:Image size="80" resid="Icon.80x80" />
+                  </Icon>
+                  <Action xsi:type="ExecuteFunction">
+                    <FunctionName>openHistory</FunctionName>
+                  </Action>
+                </Control>
+                <Control xsi:type="Button" id="exportCurrent">
+                  <Label resid="exportCurrent.Label" />
+                  <Supertip>
+                    <Title resid="exportCurrent.Label" />
+                    <Description resid="exportCurrent.Tooltip" />
+                  </Supertip>
+                  <Icon>
+                    <bt:Image size="16" resid="Icon.16x16" />
+                    <bt:Image size="32" resid="Icon.32x32" />
+                    <bt:Image size="80" resid="Icon.80x80" />
+                  </Icon>
+                  <Action xsi:type="ExecuteFunction">
+                    <FunctionName>exportCurrent</FunctionName>
+                  </Action>
+                </Control>
+              </Group>
+              <Group id="grpSettings">
+                <Label resid="grpSettingsLabel" />
+                <Icon>
+                  <bt:Image size="16" resid="Icon.16x16" />
+                  <bt:Image size="32" resid="Icon.32x32" />
+                  <bt:Image size="80" resid="Icon.80x80" />
+                </Icon>
+                <Control xsi:type="Button" id="openSettings">
+                  <Label resid="openSettings.Label" />
+                  <Supertip>
+                    <Title resid="openSettings.Label" />
+                    <Description resid="openSettings.Tooltip" />
+                  </Supertip>
+                  <Icon>
+                    <bt:Image size="16" resid="Icon.16x16" />
+                    <bt:Image size="32" resid="Icon.32x32" />
+                    <bt:Image size="80" resid="Icon.80x80" />
+                  </Icon>
+                  <Action xsi:type="ExecuteFunction">
+                    <FunctionName>openSettings</FunctionName>
+                  </Action>
+                </Control>
+                <Control xsi:type="Button" id="manageMcp">
+                  <Label resid="manageMcp.Label" />
+                  <Supertip>
+                    <Title resid="manageMcp.Label" />
+                    <Description resid="manageMcp.Tooltip" />
+                  </Supertip>
+                  <Icon>
+                    <bt:Image size="16" resid="Icon.16x16" />
+                    <bt:Image size="32" resid="Icon.32x32" />
+                    <bt:Image size="80" resid="Icon.80x80" />
+                  </Icon>
+                  <Action xsi:type="ExecuteFunction">
+                    <FunctionName>manageMcp</FunctionName>
+                  </Action>
+                </Control>
+              </Group>
+            </CustomTab>
+          </ExtensionPoint>
+        </DesktopFormFactor>
+      </Host>
+
+      <!-- ====================== Excel ====================== -->
+      <Host xsi:type="Workbook">
+        <Runtimes>
+          <Runtime resid="Taskpane.Url" />
+        </Runtimes>
+        <DesktopFormFactor>
+          <GetStarted>
+            <Title resid="GetStarted.Title" />
+            <Description resid="GetStarted.Description" />
+            <LearnMoreUrl resid="GetStarted.LearnMoreUrl" />
+          </GetStarted>
+          <FunctionFile resid="Taskpane.Url" />
+          <ExtensionPoint xsi:type="CustomTab">
+            <CustomTab id="hopeOfficeTab">
+              <Group id="grpMain">
+                <Label resid="grpMainLabel" />
+                <Icon>
+                  <bt:Image size="16" resid="Icon.16x16" />
+                  <bt:Image size="32" resid="Icon.32x32" />
+                  <bt:Image size="80" resid="Icon.80x80" />
+                </Icon>
+                <Control xsi:type="Button" id="openTaskPane">
+                  <Label resid="openTaskPane.Label" />
+                  <Supertip>
+                    <Title resid="openTaskPane.Label" />
+                    <Description resid="openTaskPane.Tooltip" />
+                  </Supertip>
+                  <Icon>
+                    <bt:Image size="16" resid="Icon.16x16" />
+                    <bt:Image size="32" resid="Icon.32x32" />
+                    <bt:Image size="80" resid="Icon.80x80" />
+                  </Icon>
+                  <Action xsi:type="ShowTaskpane">
+                    <TaskpaneId>hopeOfficeTaskPane</TaskpaneId>
+                    <SourceLocation resid="Taskpane.Url" />
+                    <Title resid="openTaskPane.Label" />
+                  </Action>
+                </Control>
+                <Control xsi:type="Button" id="newChat">
+                  <Label resid="newChat.Label" />
+                  <Supertip>
+                    <Title resid="newChat.Label" />
+                    <Description resid="newChat.Tooltip" />
+                  </Supertip>
+                  <Icon>
+                    <bt:Image size="16" resid="Icon.16x16" />
+                    <bt:Image size="32" resid="Icon.32x32" />
+                    <bt:Image size="80" resid="Icon.80x80" />
+                  </Icon>
+                  <Action xsi:type="ExecuteFunction">
+                    <FunctionName>newChat</FunctionName>
+                  </Action>
+                </Control>
+              </Group>
+              <Group id="grpHistory">
+                <Label resid="grpHistoryLabel" />
+                <Icon>
+                  <bt:Image size="16" resid="Icon.16x16" />
+                  <bt:Image size="32" resid="Icon.32x32" />
+                  <bt:Image size="80" resid="Icon.80x80" />
+                </Icon>
+                <Control xsi:type="Button" id="openHistory">
+                  <Label resid="openHistory.Label" />
+                  <Supertip>
+                    <Title resid="openHistory.Label" />
+                    <Description resid="openHistory.Tooltip" />
+                  </Supertip>
+                  <Icon>
+                    <bt:Image size="16" resid="Icon.16x16" />
+                    <bt:Image size="32" resid="Icon.32x32" />
+                    <bt:Image size="80" resid="Icon.80x80" />
+                  </Icon>
+                  <Action xsi:type="ExecuteFunction">
+                    <FunctionName>openHistory</FunctionName>
+                  </Action>
+                </Control>
+                <Control xsi:type="Button" id="exportCurrent">
+                  <Label resid="exportCurrent.Label" />
+                  <Supertip>
+                    <Title resid="exportCurrent.Label" />
+                    <Description resid="exportCurrent.Tooltip" />
+                  </Supertip>
+                  <Icon>
+                    <bt:Image size="16" resid="Icon.16x16" />
+                    <bt:Image size="32" resid="Icon.32x32" />
+                    <bt:Image size="80" resid="Icon.80x80" />
+                  </Icon>
+                  <Action xsi:type="ExecuteFunction">
+                    <FunctionName>exportCurrent</FunctionName>
+                  </Action>
+                </Control>
+              </Group>
+              <Group id="grpSettings">
+                <Label resid="grpSettingsLabel" />
+                <Icon>
+                  <bt:Image size="16" resid="Icon.16x16" />
+                  <bt:Image size="32" resid="Icon.32x32" />
+                  <bt:Image size="80" resid="Icon.80x80" />
+                </Icon>
+                <Control xsi:type="Button" id="openSettings">
+                  <Label resid="openSettings.Label" />
+                  <Supertip>
+                    <Title resid="openSettings.Label" />
+                    <Description resid="openSettings.Tooltip" />
+                  </Supertip>
+                  <Icon>
+                    <bt:Image size="16" resid="Icon.16x16" />
+                    <bt:Image size="32" resid="Icon.32x32" />
+                    <bt:Image size="80" resid="Icon.80x80" />
+                  </Icon>
+                  <Action xsi:type="ExecuteFunction">
+                    <FunctionName>openSettings</FunctionName>
+                  </Action>
+                </Control>
+                <Control xsi:type="Button" id="manageMcp">
+                  <Label resid="manageMcp.Label" />
+                  <Supertip>
+                    <Title resid="manageMcp.Label" />
+                    <Description resid="manageMcp.Tooltip" />
+                  </Supertip>
+                  <Icon>
+                    <bt:Image size="16" resid="Icon.16x16" />
+                    <bt:Image size="32" resid="Icon.32x32" />
+                    <bt:Image size="80" resid="Icon.80x80" />
+                  </Icon>
+                  <Action xsi:type="ExecuteFunction">
+                    <FunctionName>manageMcp</FunctionName>
+                  </Action>
+                </Control>
+              </Group>
+            </CustomTab>
+          </ExtensionPoint>
+        </DesktopFormFactor>
+      </Host>
+
+      <!-- ====================== PowerPoint ====================== -->
+      <Host xsi:type="Presentation">
+        <Runtimes>
+          <Runtime resid="Taskpane.Url" />
+        </Runtimes>
+        <DesktopFormFactor>
+          <GetStarted>
+            <Title resid="GetStarted.Title" />
+            <Description resid="GetStarted.Description" />
+            <LearnMoreUrl resid="GetStarted.LearnMoreUrl" />
+          </GetStarted>
+          <FunctionFile resid="Taskpane.Url" />
+          <ExtensionPoint xsi:type="CustomTab">
+            <CustomTab id="hopeOfficeTab">
+              <Group id="grpMain">
+                <Label resid="grpMainLabel" />
+                <Icon>
+                  <bt:Image size="16" resid="Icon.16x16" />
+                  <bt:Image size="32" resid="Icon.32x32" />
+                  <bt:Image size="80" resid="Icon.80x80" />
+                </Icon>
+                <Control xsi:type="Button" id="openTaskPane">
+                  <Label resid="openTaskPane.Label" />
+                  <Supertip>
+                    <Title resid="openTaskPane.Label" />
+                    <Description resid="openTaskPane.Tooltip" />
+                  </Supertip>
+                  <Icon>
+                    <bt:Image size="16" resid="Icon.16x16" />
+                    <bt:Image size="32" resid="Icon.32x32" />
+                    <bt:Image size="80" resid="Icon.80x80" />
+                  </Icon>
+                  <Action xsi:type="ShowTaskpane">
+                    <TaskpaneId>hopeOfficeTaskPane</TaskpaneId>
+                    <SourceLocation resid="Taskpane.Url" />
+                    <Title resid="openTaskPane.Label" />
+                  </Action>
+                </Control>
+                <Control xsi:type="Button" id="newChat">
+                  <Label resid="newChat.Label" />
+                  <Supertip>
+                    <Title resid="newChat.Label" />
+                    <Description resid="newChat.Tooltip" />
+                  </Supertip>
+                  <Icon>
+                    <bt:Image size="16" resid="Icon.16x16" />
+                    <bt:Image size="32" resid="Icon.32x32" />
+                    <bt:Image size="80" resid="Icon.80x80" />
+                  </Icon>
+                  <Action xsi:type="ExecuteFunction">
+                    <FunctionName>newChat</FunctionName>
+                  </Action>
+                </Control>
+              </Group>
+              <Group id="grpHistory">
+                <Label resid="grpHistoryLabel" />
+                <Icon>
+                  <bt:Image size="16" resid="Icon.16x16" />
+                  <bt:Image size="32" resid="Icon.32x32" />
+                  <bt:Image size="80" resid="Icon.80x80" />
+                </Icon>
+                <Control xsi:type="Button" id="openHistory">
+                  <Label resid="openHistory.Label" />
+                  <Supertip>
+                    <Title resid="openHistory.Label" />
+                    <Description resid="openHistory.Tooltip" />
+                  </Supertip>
+                  <Icon>
+                    <bt:Image size="16" resid="Icon.16x16" />
+                    <bt:Image size="32" resid="Icon.32x32" />
+                    <bt:Image size="80" resid="Icon.80x80" />
+                  </Icon>
+                  <Action xsi:type="ExecuteFunction">
+                    <FunctionName>openHistory</FunctionName>
+                  </Action>
+                </Control>
+                <Control xsi:type="Button" id="exportCurrent">
+                  <Label resid="exportCurrent.Label" />
+                  <Supertip>
+                    <Title resid="exportCurrent.Label" />
+                    <Description resid="exportCurrent.Tooltip" />
+                  </Supertip>
+                  <Icon>
+                    <bt:Image size="16" resid="Icon.16x16" />
+                    <bt:Image size="32" resid="Icon.32x32" />
+                    <bt:Image size="80" resid="Icon.80x80" />
+                  </Icon>
+                  <Action xsi:type="ExecuteFunction">
+                    <FunctionName>exportCurrent</FunctionName>
+                  </Action>
+                </Control>
+              </Group>
+              <Group id="grpSettings">
+                <Label resid="grpSettingsLabel" />
+                <Icon>
+                  <bt:Image size="16" resid="Icon.16x16" />
+                  <bt:Image size="32" resid="Icon.32x32" />
+                  <bt:Image size="80" resid="Icon.80x80" />
+                </Icon>
+                <Control xsi:type="Button" id="openSettings">
+                  <Label resid="openSettings.Label" />
+                  <Supertip>
+                    <Title resid="openSettings.Label" />
+                    <Description resid="openSettings.Tooltip" />
+                  </Supertip>
+                  <Icon>
+                    <bt:Image size="16" resid="Icon.16x16" />
+                    <bt:Image size="32" resid="Icon.32x32" />
+                    <bt:Image size="80" resid="Icon.80x80" />
+                  </Icon>
+                  <Action xsi:type="ExecuteFunction">
+                    <FunctionName>openSettings</FunctionName>
+                  </Action>
+                </Control>
+                <Control xsi:type="Button" id="manageMcp">
+                  <Label resid="manageMcp.Label" />
+                  <Supertip>
+                    <Title resid="manageMcp.Label" />
+                    <Description resid="manageMcp.Tooltip" />
+                  </Supertip>
+                  <Icon>
+                    <bt:Image size="16" resid="Icon.16x16" />
+                    <bt:Image size="32" resid="Icon.32x32" />
+                    <bt:Image size="80" resid="Icon.80x80" />
+                  </Icon>
+                  <Action xsi:type="ExecuteFunction">
+                    <FunctionName>manageMcp</FunctionName>
+                  </Action>
+                </Control>
+              </Group>
+            </CustomTab>
+          </ExtensionPoint>
+        </DesktopFormFactor>
+      </Host>
+
+    </Hosts>
+
+    <Resources>
+      <bt:Images>
+        <bt:Image id="Icon.16x16" DefaultValue="https://localhost:3721/assets/icon-16.png" />
+        <bt:Image id="Icon.32x32" DefaultValue="https://localhost:3721/assets/icon-32.png" />
+        <bt:Image id="Icon.80x80" DefaultValue="https://localhost:3721/assets/icon-80.png" />
+      </bt:Images>
+      <bt:Urls>
+        <bt:Url id="Taskpane.Url" DefaultValue="https://localhost:3721/src/taskpane/index.html" />
+        <bt:Url id="GetStarted.LearnMoreUrl" DefaultValue="https://github.com/hope-young/hopeOffice" />
+      </bt:Urls>
+      <bt:ShortStrings>
+        <bt:String id="Description" DefaultValue="hope-Office task pane" />
+        <bt:String id="GetStarted.Title" DefaultValue="hope-Office" />
+        <bt:String id="grpMainLabel" DefaultValue="Chat" />
+        <bt:String id="grpHistoryLabel" DefaultValue="History" />
+        <bt:String id="grpSettingsLabel" DefaultValue="Settings" />
+        <bt:String id="openTaskPane.Label" DefaultValue="Open Task Pane" />
+        <bt:String id="newChat.Label" DefaultValue="New Chat" />
+        <bt:String id="openHistory.Label" DefaultValue="History" />
+        <bt:String id="exportCurrent.Label" DefaultValue="Export" />
+        <bt:String id="openSettings.Label" DefaultValue="Settings" />
+        <bt:String id="manageMcp.Label" DefaultValue="MCP Servers" />
+      </bt:ShortStrings>
+      <bt:LongStrings>
+        <bt:String id="GetStarted.Description" DefaultValue="AI assistant for Word, Excel, and PowerPoint. Local-first, BYO API key." />
+        <bt:String id="openTaskPane.Tooltip" DefaultValue="Open the hope-Office task pane in the sidebar." />
+        <bt:String id="newChat.Tooltip" DefaultValue="Start a new chat session." />
+        <bt:String id="openHistory.Tooltip" DefaultValue="Browse past conversations." />
+        <bt:String id="exportCurrent.Tooltip" DefaultValue="Export the current conversation to markdown." />
+        <bt:String id="openSettings.Tooltip" DefaultValue="Open the settings panel." />
+        <bt:String id="manageMcp.Tooltip" DefaultValue="Manage MCP server connections." />
+      </bt:LongStrings>
+    </Resources>
+
+  </VersionOverrides>
+
+</OfficeApp>
