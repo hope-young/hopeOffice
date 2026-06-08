@@ -3,10 +3,9 @@
   xmlns="http://schemas.microsoft.com/office/appforoffice/1.1"
   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
   xmlns:bt="http://schemas.microsoft.com/office/officeappbasictypes/1.0"
-  xmlns:ov="http://schemas.microsoft.com/office/taskpaneappversionoverrides"
   xsi:type="TaskPaneApp">
 
-  <Id>2c1e8a4d-3f7b-4d6e-9a12-b8c5d7f1e203</Id>
+  <Id>1458732e-2964-4e0d-821e-2755bb07c22f</Id>
   <Version>0.1.0.0</Version>
   <ProviderName>hope_young</ProviderName>
   <DefaultLocale>en-US</DefaultLocale>
@@ -37,7 +36,7 @@
   <Permissions>ReadWriteDocument</Permissions>
 
   <VersionOverrides
-    xmlns="http://schemas.microsoft.com/office/taskpaneappversionoverrides/1.0"
+    xmlns="http://schemas.microsoft.com/office/taskpaneappversionoverrides"
     xsi:type="VersionOverridesV1_0">
 
     <Description resid="Description" />
@@ -65,7 +64,7 @@
             <LearnMoreUrl resid="GetStarted.LearnMoreUrl" />
           </GetStarted>
           <FunctionFile resid="Taskpane.Url" />
-          <ExtensionPoint xsi:type="CustomTab">
+          <ExtensionPoint xsi:type="PrimaryCommandSurface">
             <CustomTab id="hopeOfficeTab">
               <Group id="grpMain">
                 <Label resid="grpMainLabel" />
@@ -200,7 +199,7 @@
             <LearnMoreUrl resid="GetStarted.LearnMoreUrl" />
           </GetStarted>
           <FunctionFile resid="Taskpane.Url" />
-          <ExtensionPoint xsi:type="CustomTab">
+          <ExtensionPoint xsi:type="PrimaryCommandSurface">
             <CustomTab id="hopeOfficeTab">
               <Group id="grpMain">
                 <Label resid="grpMainLabel" />
@@ -335,7 +334,7 @@
             <LearnMoreUrl resid="GetStarted.LearnMoreUrl" />
           </GetStarted>
           <FunctionFile resid="Taskpane.Url" />
-          <ExtensionPoint xsi:type="CustomTab">
+          <ExtensionPoint xsi:type="PrimaryCommandSurface">
             <CustomTab id="hopeOfficeTab">
               <Group id="grpMain">
                 <Label resid="grpMainLabel" />
