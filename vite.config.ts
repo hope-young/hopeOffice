@@ -1,7 +1,7 @@
-import { defineConfig } from 'vite'
+import { defineConfig, type Plugin } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
-import { existsSync, readFileSync } from 'node:fs'
+import { existsSync, readFileSync, writeFileSync } from 'node:fs'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { homedir } from 'node:os'
@@ -39,7 +39,11 @@ export default defineConfig(({ mode }) => {
   }
 
   return {
-    plugins: [react(), tailwindcss()],
+    plugins: [
+      react(),
+      tailwindcss(),
+      ...(mode === 'production' ? [manifestRewritePlugin()] : []),
+    ],
 
     server: {
       port: 3721,
@@ -92,5 +96,46 @@ export default defineConfig(({ mode }) => {
     define: {
       __DEV__: JSON.stringify(mode !== 'production'),
     },
+
+    // GH Pages project-page base path. Asset URLs in dist/taskpane-*.js
+    // and dist/assets/* will be prefixed with `/hopeOffice/`. The dev
+    // server keeps `/` because Vite's HMR client expects relative URLs.
+    base: mode === 'production' ? '/hopeOffice/' : '/',
   }
 })
+
+/**
+ * Production manifest rewriter.
+ *
+ * The committed `manifest.xml` at the project root uses
+ * `https://localhost:3721/...` everywhere — that URL is what the
+ * dev server serves. For a production build we copy the manifest
+ * into `dist/manifest.xml` and rewrite every reference to point
+ * at the GH Pages project page. The installer ships the rewritten
+ * copy.
+ *
+ * We rewrite the WHOLE string `https://localhost:3721` rather than
+ * per-attribute so we don't have to track Office's evolving list
+ * of URL-bearing elements (IconUrl, AppDomain, SourceLocation,
+ * bt:Url, bt:Image, …). The dev URL is unique enough that a
+ * global swap is safe.
+ */
+function manifestRewritePlugin(): Plugin {
+  const PROD_BASE = process.env.SOURCE_URL ??
+    'https://hope-young.github.io/hopeOffice'
+  return {
+    name: 'hope-office:rewrite-manifest',
+    apply: 'build',
+    closeBundle() {
+      const src = resolve(__dirname, 'manifest.xml')
+      const dst = resolve(__dirname, 'dist/manifest.xml')
+      const xml = readFileSync(src, 'utf-8')
+      const rewritten = xml.replaceAll(
+        'https://localhost:3721',
+        PROD_BASE,
+      )
+      writeFileSync(dst, rewritten, 'utf-8')
+      console.warn(`[hope-office] wrote ${dst} (base: ${PROD_BASE})`)
+    },
+  }
+}

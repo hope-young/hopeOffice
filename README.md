@@ -34,13 +34,33 @@ npm run sideload
 # Type-check + production build
 npm run build
 
+# Production build: rewrites `manifest.xml`'s `SourceLocation`
+# to point at GH Pages (or whatever SOURCE_URL is set to), then
+# bakes the relative-asset base `/hopeOffice/` into the bundle.
+SOURCE_URL=https://your.domain.example npm run build:prod
+
+# Deploy the production build to the gh-pages branch. The
+# `predeploy` script runs `build:prod` first.
+npm run deploy
+
+# Install the production add-in (Windows, per-user, no admin)
+pwsh installer/install.ps1 -Production
+
 # Run unit tests
 npm test
 ```
 
 After `npm run dev`, open Word → `Insert` → `My Add-ins` → `Manage My Add-ins` → `Upload My Add-in` → pick `manifest.xml`.
 
-The task pane lives at `https://localhost:3721/src/taskpane/index.html`. The Custom Tab "hope-Office" should appear in the ribbon with three groups: **Chat**, **History**, **Settings**.
+The task pane lives at `https://localhost:3721/src/taskpane/index.html` in dev, or at the URL baked into `dist/manifest.xml` (default: `https://hope-young.github.io/hopeOffice/...`) in production. The Custom Tab "hope-Office" should appear in the ribbon with three groups: **Chat**, **History**, **Settings**.
+
+### Production deploy via GitHub Pages
+
+The deploy target is a GH Pages project page, so the asset base is
+`/hopeOffice/` (set automatically by `vite.config.ts` in production
+mode). To switch to a different host (Cloudflare Pages, Vercel, an
+internal nginx), set `SOURCE_URL` at build time and adjust the
+`base` option accordingly.
 
 ## Layout
 

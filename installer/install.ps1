@@ -108,19 +108,23 @@ if ($DryRun) {
     New-Item -ItemType Directory -Path $targetDir -Force | Out-Null
 }
 
-# Copy manifest.xml + any sibling resources. The manifest
-# references files under SourceUrl (e.g.
-# `https://localhost:3721/src/taskpane/index.html` in dev, or
-# `/dist/taskpane/index.html` once we've moved SourceUrl to
-# the built assets in a future release). Two install modes:
+# Copy manifest.xml + any sibling resources. Two install modes:
 #
 #   Default (dev):  copy `public/` + `src/`. Pair with
 #                   `npm run dev`; dev certs must be installed
 #                   via `npx office-addin-dev-certs install`.
+#                   The shipped manifest.xml at the project root
+#                   points at `https://localhost:3721/...`.
+#
 #   -Production:    copy `public/` + `dist/`. Requires a prior
-#                   `npm run build`. The user is responsible
-#                   for serving `dist/` over HTTPS somewhere
-#                   the manifest's SourceUrl can reach.
+#                   `npm run build:prod` (NOT plain `npm run
+#                   build` — the Vite manifest-rewrite plugin
+#                   only fires in production mode). `dist/manifest.xml`
+#                   will then point at the configured
+#                   `SOURCE_URL` (default:
+#                   `https://hope-young.github.io/hopeOffice`),
+#                   so Word/Excel/PowerPoint load the add-in
+#                   from GH Pages. No local server required.
 $manifestFiles = @(Get-ChildItem -Path $SourceDir -Filter "manifest.xml")
 if ($DryRun) {
     Write-Host "[dry-run] would copy manifest.xml"
@@ -179,3 +183,9 @@ Write-Host ""
 Write-Host "Done. Restart Word/Excel/PowerPoint for the change to take effect."
 Write-Host "Sideload the add-in via Insert -> My Add-ins -> $addInName (or via the"
 Write-Host ('manifest URL file:///' + $targetDir + '/manifest.xml if your Office build supports it).')
+if ($Production) {
+    Write-Host ""
+    Write-Host "Production install: the add-in will load its task pane from"
+    Write-Host "the SOURCE_URL baked into dist/manifest.xml (default: GH Pages"
+    Write-Host "project page). No local dev server is required."
+}
