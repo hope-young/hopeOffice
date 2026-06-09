@@ -16,7 +16,7 @@
  *     dropdown needs.
  */
 import { createAnthropic } from '@ai-sdk/anthropic'
-import { streamText, type ModelMessage } from 'ai'
+import { streamText, stepCountIs, type ModelMessage } from 'ai'
 import type {
   ChatProvider,
   ModelInfo,
@@ -118,12 +118,16 @@ export function createAnthropicProvider(opts: AnthropicProviderOpts): ChatProvid
     name: 'Anthropic',
 
     async *streamChat(s: StreamChatOpts): AsyncIterable<StreamChunk> {
-      // Phase 4: no tools yet — the LLM gets the raw messages and
-      // produces a text response. Phase 5 wires in the skill registry
-      // and forwards ToolDef[] here.
+      // Phase 5: forward tools + system to the AI SDK. The SDK runs
+      // skill.execute locally, handles the multi-step loop via
+      // `stopWhen: stepCountIs(maxSteps)`, and emits a typed
+      // `fullStream` we re-shape into our `StreamChunk` vocabulary.
       const result = streamText({
         model: anthropic(s.model),
+        system: s.system?.content,
         messages: toCoreMessages(s.messages),
+        tools: s.tools,
+        stopWhen: stepCountIs(s.maxSteps ?? 5),
         abortSignal: s.signal,
         ...(s.temperature !== undefined ? { temperature: s.temperature } : {}),
         ...(s.maxOutputTokens !== undefined
@@ -148,13 +152,56 @@ export function createAnthropicProvider(opts: AnthropicProviderOpts): ChatProvid
             yield { type: 'reasoning-delta', delta: part.text }
             break
           case 'tool-input-start':
+            // StreamChunk.tool-call-start takes a complete ToolCall.
+            // We build it with an empty `args` placeholder; the
+            // subsequent tool-input-delta events fill it in.
+            yield {
+              type: 'tool-call-start',
+              toolCall: {
+                id: part.id,
+                name: part.toolName,
+                args: {},
+                status: 'pending',
+              },
+            }
+            break
           case 'tool-input-delta':
-            // Phase 4: tools are not advertised, so these shouldn't
-            // appear. If they do (LLM hallucinated a tool), surface
-            // them as a tool-call-start so the orchestrator can log.
-            // Forwarding input deltas needs the ToolCall object built
-            // up first; for now we just no-op to avoid breaking the
-            // stream.
+            yield {
+              type: 'tool-call-args',
+              toolCallId: part.id,
+              delta: part.delta,
+            }
+            break
+          case 'tool-call':
+            // The AI SDK fires this with the *complete* validated
+            // input. We dispatch a fresh tool-call-start so the
+            // orchestrator replaces the placeholder.
+            yield {
+              type: 'tool-call-start',
+              toolCall: {
+                id: part.toolCallId,
+                name: part.toolName,
+                args: part.input,
+                status: 'pending',
+              },
+            }
+            break
+          case 'tool-result':
+            yield {
+              type: 'tool-call-result',
+              toolCallId: part.toolCallId,
+              result: part.output,
+            }
+            break
+          case 'tool-error':
+            yield {
+              type: 'tool-call-error',
+              toolCallId: part.toolCallId,
+              error:
+                part.error instanceof Error
+                  ? part.error.message
+                  : String(part.error),
+            }
             break
           case 'finish-step':
             // Per-step usage; we sum across steps for the final usage

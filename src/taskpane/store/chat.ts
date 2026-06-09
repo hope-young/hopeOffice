@@ -15,10 +15,18 @@
 import { create } from 'zustand'
 import { Orchestrator } from '@core/agent/orchestrator'
 import { createProvider } from '@core/providers/registry'
-import type { AgentState } from '@core/types'
+import type { AgentState, HostKind } from '@core/types'
 import { useSettingsStore } from './settings'
 
 // ---------- Orchestrator singleton (module scope) ----------
+
+/**
+ * The host is set once at Office.onReady time (see
+ * `setOrchestratorHost` below). We keep it in module scope so the
+ * orchestrator can read it from inside `streamChat` without the
+ * Zustand store needing to know about Office.
+ */
+let currentHost: HostKind = 'unsupported'
 
 const orchestrator = new Orchestrator({
   getProvider: () => {
@@ -31,7 +39,16 @@ const orchestrator = new Orchestrator({
     }
   },
   getModel: () => useSettingsStore.getState().model,
+  getHost: () => currentHost,
 })
+
+/**
+ * Called by `src/taskpane/index.tsx` once Office.onReady fires.
+ * Dev-mode browser preview keeps the default `unsupported`.
+ */
+export function setOrchestratorHost(host: HostKind): void {
+  currentHost = host
+}
 
 // ---------- Store ----------
 

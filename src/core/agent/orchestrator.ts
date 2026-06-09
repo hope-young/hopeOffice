@@ -26,7 +26,9 @@
  */
 import { INITIAL_AGENT_STATE, reduce } from './reducer'
 import type { ChatProvider, StreamChatOpts } from '../providers/interface'
-import type { AgentEvent, AgentState } from '../types'
+import type { AgentEvent, AgentState, HostKind } from '../types'
+import { toolsForHost } from './tools'
+import { buildSystemPrompt } from './system-prompt'
 
 export type OrchestratorDeps = {
   /** Provider factory: returns the current ChatProvider or null when
@@ -35,6 +37,9 @@ export type OrchestratorDeps = {
   getProvider: () => ChatProvider | null
   /** Provider-scoped model id from Settings. */
   getModel: () => string
+  /** Current Office host. Set once at Office.onReady; falls back
+   *  to 'unsupported' in dev-mode browser preview. */
+  getHost: () => HostKind
 }
 
 export class Orchestrator {
@@ -90,11 +95,14 @@ export class Orchestrator {
     }
 
     try {
+      const host = this.deps.getHost()
       const opts: StreamChatOpts = {
         messages: this.state.messages,
-        tools: [], // Phase 4: no tools. Phase 5 wires the skill registry.
+        tools: toolsForHost(host),
+        system: { content: buildSystemPrompt(host) },
         model: this.deps.getModel(),
         signal,
+        maxSteps: 5,
       }
       const stream = provider.streamChat(opts)
 

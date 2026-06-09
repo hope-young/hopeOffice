@@ -7,7 +7,7 @@
  * approval UI etc. land in later phases per SPEC §13.
  */
 import { useState } from 'react'
-import type { Message } from '@core/types'
+import type { Message, ToolCall } from '@core/types'
 import { useChatStore } from '../store/chat'
 import { useSettingsStore } from '../store/settings'
 
@@ -72,6 +72,27 @@ export function ChatPanel() {
           <p className="text-xs text-neutral-400 text-center">
             {state.status === 'executing' ? 'Executing tool…' : 'Streaming…'}
           </p>
+        )}
+
+        {state.toolCalls.length > 0 && (
+          <div className="space-y-1">
+            {state.toolCalls.map((tc) => (
+              <div
+                key={tc.id}
+                className="flex items-center gap-2 rounded border border-neutral-200 bg-white px-2 py-1 text-xs"
+              >
+                <span className="font-mono text-neutral-700">{tc.name}</span>
+                <ToolStatusPill status={tc.status} />
+                {tc.status === 'error' && tc.error ? (
+                  <span className="text-red-600 truncate">{tc.error.message}</span>
+                ) : tc.status === 'success' ? (
+                  <span className="text-neutral-500 truncate">
+                    {summarizeResult(tc.result)}
+                  </span>
+                ) : null}
+              </div>
+            ))}
+          </div>
         )}
       </div>
 
@@ -144,4 +165,43 @@ function MessageBubble({
       </div>
     </div>
   )
+}
+
+function ToolStatusPill({ status }: { status: ToolCall['status'] }) {
+  const label =
+    status === 'pending'
+      ? 'pending'
+      : status === 'running'
+        ? 'running…'
+        : status === 'success'
+          ? 'ok'
+          : 'error'
+  const colour =
+    status === 'pending'
+      ? 'bg-neutral-200 text-neutral-600'
+      : status === 'running'
+        ? 'bg-blue-100 text-blue-700'
+        : status === 'success'
+          ? 'bg-green-100 text-green-700'
+          : 'bg-red-100 text-red-700'
+  return (
+    <span
+      className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${colour}`}
+    >
+      {label}
+    </span>
+  )
+}
+
+function summarizeResult(result: unknown): string {
+  if (result == null) return '—'
+  if (typeof result === 'string') return result
+  if (typeof result !== 'object') return String(result)
+  try {
+    const json = JSON.stringify(result)
+    if (json.length > 80) return json.slice(0, 77) + '…'
+    return json
+  } catch {
+    return '[unserialisable]'
+  }
 }

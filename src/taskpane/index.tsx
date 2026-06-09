@@ -1,6 +1,8 @@
 import { createRoot } from 'react-dom/client'
 import { StrictMode } from 'react'
 import { App } from './App'
+import { setOrchestratorHost } from './store/chat'
+import type { HostKind } from '../core/types'
 import './styles.css'
 
 // Office.js is loaded by the manifest's <Runtime>; we wait for onReady before
@@ -14,6 +16,9 @@ const root = createRoot(container)
 
 if (typeof Office !== 'undefined') {
   Office.onReady((info) => {
+    const host = mapHostType(info.host)
+    setOrchestratorHost(host)
+
     root.render(
       <StrictMode>
         <App host={info.host} />
@@ -47,9 +52,17 @@ if (typeof Office !== 'undefined') {
 } else {
   // Standalone preview outside Office (e.g. plain browser for design work).
   // Office isn't defined in this case — the App component handles unknown host.
+  setOrchestratorHost('unsupported')
   root.render(
     <StrictMode>
       <App host={null} />
     </StrictMode>,
   )
+}
+
+function mapHostType(h: Office.HostType | string): HostKind {
+  if (h === Office.HostType.Word) return 'word'
+  if (h === Office.HostType.Excel) return 'excel'
+  if (h === Office.HostType.PowerPoint) return 'powerpoint'
+  return 'unsupported'
 }

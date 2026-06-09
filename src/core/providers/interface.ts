@@ -6,38 +6,8 @@
  *
  * No DOM, no Office, no React imports allowed in this file.
  */
+import type { Tool } from 'ai'
 import type { Cost, Message, StreamChunk } from '../types'
-
-// ---------- Tool / schema types ----------
-
-/**
- * A JSON Schema fragment we pass to the LLM. We only type the fields we
- * actually use; providers can pass through SDK-specific extras as
- * `unknown` (Anthropic / OpenAI both tolerate a superset).
- */
-export type JsonSchema = {
-  type: 'object'
-  properties: Record<string, unknown>
-  required?: string[]
-  additionalProperties?: boolean
-  [key: `x-${string}`]: unknown
-}
-
-/**
- * A tool definition as the LLM sees it. The provider adapter turns
- * this into the SDK-specific shape (Anthropic `tools`, OpenAI
- * `tools`, OpenAI-compatible `tools`, …).
- *
- * By convention the orchestrator registers a single `execute_skill`
- * tool whose `parameters` is a union of every Skill's zod schema
- * (see SPEC_DETAILS §6 "Calling convention"). MCP tools are added
- * alongside in Phase 10.
- */
-export type ToolDef = {
-  name: string
-  description: string
-  parameters: JsonSchema
-}
 
 // ---------- Usage / pricing ----------
 
@@ -69,9 +39,26 @@ export type ModelInfo = {
 
 // ---------- streamChat options ----------
 
+/**
+ * A system message to prepend to the conversation. The provider
+ * adapter turns this into the SDK-specific shape (Anthropic
+ * `system`, OpenAI `messages[0].role:'system'`, …).
+ */
+export type SystemMessage = {
+  content: string
+}
+
 export type StreamChatOpts = {
   messages: Message[]
-  tools: ToolDef[]
+  /**
+   * AI SDK 5 tool definitions. The orchestrator builds this from
+   * the host's skill registry. Providers pass it through to
+   * `streamText({ tools })` unchanged.
+   */
+  tools: Record<string, Tool>
+  /** Optional system prompt — orchestrator builds this from the
+   *  skill registry + host. */
+  system?: SystemMessage
   /** Provider-scoped model id. */
   model: string
   /** Cancelled when the user hits Stop or the conversation is closed. */
@@ -81,13 +68,19 @@ export type StreamChatOpts = {
    *  exposes params that all three providers accept. */
   temperature?: number
   maxOutputTokens?: number
+  /**
+   * Max number of LLM round-trips in a single user turn (each
+   * round-trip can call tools). Default 1 (no multi-step). Phase 5
+   * bumps to ~5 so the LLM can chain skills in one turn.
+   */
+  maxSteps?: number
 }
 
 // ---------- The interface ----------
 
 export interface ChatProvider {
   /** Stable identifier used in settings + URLs:
-   *  `anthropic` | `openai` | `openai-compatible`. */
+   *  `anthropic` | `minimax` | `openai` | `openai-compatible`. */
   id: string
   /** Human-readable provider name shown in the Settings dropdown. */
   name: string

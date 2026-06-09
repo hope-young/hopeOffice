@@ -21,7 +21,7 @@
  * (just `id` + `object` + `owned_by`).
  */
 import { createOpenAICompatible } from '@ai-sdk/openai-compatible'
-import { streamText, type LanguageModelUsage } from 'ai'
+import { streamText, stepCountIs, type LanguageModelUsage } from 'ai'
 import type {
   ChatProvider,
   ModelInfo,
@@ -132,6 +132,9 @@ export function createMiniMaxProvider(opts: MiniMaxProviderOpts): ChatProvider {
         // ModelMessage but TS wants the literal role unions, so we
         // cast at the boundary rather than retype every branch.
         messages: toChatCompletionMessages(s.messages) as unknown as import('ai').ModelMessage[],
+        system: s.system?.content,
+        tools: s.tools,
+        stopWhen: stepCountIs(s.maxSteps ?? 5),
         abortSignal: s.signal,
         ...(s.temperature !== undefined ? { temperature: s.temperature } : {}),
         ...(s.maxOutputTokens !== undefined
@@ -152,8 +155,50 @@ export function createMiniMaxProvider(opts: MiniMaxProviderOpts): ChatProvider {
             yield { type: 'reasoning-delta', delta: part.text }
             break
           case 'tool-input-start':
+            yield {
+              type: 'tool-call-start',
+              toolCall: {
+                id: part.id,
+                name: part.toolName,
+                args: {},
+                status: 'pending',
+              },
+            }
+            break
           case 'tool-input-delta':
-            // Phase 4: tools are not advertised. Ignore.
+            yield {
+              type: 'tool-call-args',
+              toolCallId: part.id,
+              delta: part.delta,
+            }
+            break
+          case 'tool-call':
+            yield {
+              type: 'tool-call-start',
+              toolCall: {
+                id: part.toolCallId,
+                name: part.toolName,
+                args: part.input,
+                status: 'pending',
+              },
+            }
+            break
+          case 'tool-result':
+            yield {
+              type: 'tool-call-result',
+              toolCallId: part.toolCallId,
+              result: part.output,
+            }
+            break
+          case 'tool-error':
+            yield {
+              type: 'tool-call-error',
+              toolCallId: part.toolCallId,
+              error:
+                part.error instanceof Error
+                  ? part.error.message
+                  : String(part.error),
+            }
             break
           case 'finish-step': {
             const u: LanguageModelUsage = part.usage
