@@ -11,7 +11,12 @@ import { ChatPanel } from './components/ChatPanel'
 import { SettingsPanel } from './components/SettingsPanel'
 
 type AppProps = {
-  host: Office.HostType | null
+  /**
+   * The mapped host, or `null` when running outside Office
+   * (plain browser preview). `index.tsx` does the mapping
+   * once — see `mapHostType` there for the why.
+   */
+  host: 'word' | 'excel' | 'powerpoint' | 'unsupported' | null
 }
 
 type View = 'chat' | 'settings'
@@ -126,16 +131,16 @@ function IconBack() {
 
 // ---------- Host label ----------
 
-function hostToLabel(host: Office.HostType | null): string {
-  if (host === null) return 'browser (no Office)'
+function hostToLabel(host: AppProps['host']): string {
+  if (host == null) return 'browser (no Office)'
   switch (host) {
-    case Office.HostType.Word:
+    case 'word':
       return 'Word'
-    case Office.HostType.Excel:
+    case 'excel':
       return 'Excel'
-    case Office.HostType.PowerPoint:
+    case 'powerpoint':
       return 'PowerPoint'
     default:
-      return `host(${host})`
+      return host
   }
 }

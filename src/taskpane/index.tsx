@@ -21,7 +21,7 @@ if (typeof Office !== 'undefined') {
 
     root.render(
       <StrictMode>
-        <App host={info.host} />
+        <App host={host} />
       </StrictMode>,
     )
 
