@@ -125,7 +125,13 @@ $manifestFiles = @(Get-ChildItem -Path $SourceDir -Filter "manifest.xml")
 if ($DryRun) {
     Write-Host "[dry-run] would copy manifest.xml"
 } else {
-    Copy-Item -Path $manifestFiles -Destination $targetDir
+    # `-LiteralPath` is important: `Copy-Item -Path <FileInfo>`
+    # uses each FileInfo's `.Name` and joins it to the
+    # current working directory, which silently rewrites
+    # absolute paths when the user invokes the script
+    # from a subdirectory like `installer/`. `-LiteralPath`
+    # respects the .NET object's `FullName`.
+    Copy-Item -LiteralPath ($manifestFiles.FullName) -Destination $targetDir
 }
 $subs = if ($Production) { @("public", "dist") } else { @("public", "src") }
 foreach ($sub in $subs) {
@@ -134,7 +140,7 @@ foreach ($sub in $subs) {
         if ($DryRun) {
             Write-Host "[dry-run] would copy -Recurse $src -> $targetDir\$sub"
         } else {
-            Copy-Item -Recurse -Path $src -Destination (Join-Path $targetDir $sub)
+            Copy-Item -Recurse -LiteralPath $src -Destination (Join-Path $targetDir $sub)
         }
     } elseif ($Production -and $sub -eq "dist") {
         throw "Production install requested but `$SourceDir\dist` does not exist. Run 'npm run build' first."
