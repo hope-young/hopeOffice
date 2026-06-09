@@ -80,7 +80,7 @@ export function createOpenAIProvider(opts: OpenAIProviderOpts): ChatProvider {
         model: provider(s.model),
         messages: toChatCompletionMessages(s.messages) as unknown as import('ai').ModelMessage[],
         system: s.system?.content,
-        tools: s.tools,
+        tools: s.tools as any,
         stopWhen: stepCountIs(s.maxSteps ?? 5),
         abortSignal: s.signal,
         ...(s.temperature !== undefined ? { temperature: s.temperature } : {}),

@@ -14,6 +14,7 @@
 import { create } from 'zustand'
 import { createJSONStorage, persist, type StateStorage } from 'zustand/middleware'
 import type { ProviderId } from '@core/providers/registry'
+import type { McpServerConfig } from '@core/mcp/client'
 
 export type SettingsState = {
   providerId: ProviderId
@@ -22,11 +23,14 @@ export type SettingsState = {
   model: string
   /** Only meaningful for openai-compatible. */
   baseUrl: string
+  /** MCP server list (SPEC §13 W27). */
+  mcpServers: McpServerConfig[]
 
   setProviderId: (id: ProviderId) => void
   setApiKey: (key: string) => void
   setModel: (m: string) => void
   setBaseUrl: (u: string) => void
+  setMcpServers: (servers: McpServerConfig[]) => void
 }
 
 /**
@@ -87,11 +91,13 @@ export const useSettingsStore = create<SettingsState>()(
       apiKey: '',
       model: 'MiniMax-M3',
       baseUrl: '',
+      mcpServers: [],
 
       setProviderId: (id) => set({ providerId: id }),
       setApiKey: (key) => set({ apiKey: key }),
       setModel: (m) => set({ model: m }),
       setBaseUrl: (u) => set({ baseUrl: u }),
+      setMcpServers: (servers) => set({ mcpServers: servers }),
     }),
     {
       name: STORAGE_KEY,
@@ -101,6 +107,7 @@ export const useSettingsStore = create<SettingsState>()(
         apiKey: s.apiKey,
         model: s.model,
         baseUrl: s.baseUrl,
+        mcpServers: s.mcpServers,
       }),
     },
   ),

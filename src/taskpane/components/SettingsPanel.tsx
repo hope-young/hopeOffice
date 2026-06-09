@@ -69,11 +69,13 @@ export function SettingsPanel() {
   const apiKey = useSettingsStore((s) => s.apiKey)
   const model = useSettingsStore((s) => s.model)
   const baseUrl = useSettingsStore((s) => s.baseUrl)
+  const mcpServers = useSettingsStore((s) => s.mcpServers)
 
   const setProviderId = useSettingsStore((s) => s.setProviderId)
   const setApiKey = useSettingsStore((s) => s.setApiKey)
   const setModel = useSettingsStore((s) => s.setModel)
   const setBaseUrl = useSettingsStore((s) => s.setBaseUrl)
+  const setMcpServers = useSettingsStore((s) => s.setMcpServers)
 
   const [models, setModels] = useState<ModelInfo[]>([])
   const [modelsLoading, setModelsLoading] = useState(false)
@@ -218,6 +220,92 @@ export function SettingsPanel() {
             Could not load model list: {modelsError}
           </p>
         ) : null}
+      </div>
+
+      <hr className="border-neutral-200" />
+
+      <div>
+        <div className="flex items-center justify-between">
+          <label className="block font-medium">MCP servers</label>
+          <button
+            type="button"
+            onClick={() => {
+              setMcpServers([
+                ...mcpServers,
+                { name: `server-${mcpServers.length + 1}`, url: '', transport: 'http' },
+              ])
+            }}
+            className="rounded bg-neutral-100 px-2 py-0.5 text-xs hover:bg-neutral-200"
+          >
+            + Add
+          </button>
+        </div>
+        {mcpServers.length === 0 ? (
+          <p className="mt-1 text-xs text-neutral-500">
+            None configured. The LLM only sees built-in office.js
+            skills.
+          </p>
+        ) : (
+          <ul className="mt-2 space-y-2">
+            {mcpServers.map((s, i) => (
+              <li
+                key={`${s.name}-${i}`}
+                className="rounded border border-neutral-200 p-2"
+              >
+                <div className="flex gap-1">
+                  <input
+                    value={s.name}
+                    onChange={(e) => {
+                      const next = [...mcpServers]
+                      next[i] = { ...next[i]!, name: e.target.value }
+                      setMcpServers(next)
+                    }}
+                    placeholder="name"
+                    className="flex-1 rounded border border-neutral-200 px-1.5 py-0.5 text-xs"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setMcpServers(mcpServers.filter((_, j) => j !== i))
+                    }}
+                    className="rounded text-xs text-red-600 hover:bg-red-50 px-1.5"
+                  >
+                    ×
+                  </button>
+                </div>
+                <input
+                  value={s.url}
+                  onChange={(e) => {
+                    const next = [...mcpServers]
+                    next[i] = { ...next[i]!, url: e.target.value }
+                    setMcpServers(next)
+                  }}
+                  placeholder="https://…/mcp"
+                  className="mt-1 block w-full rounded border border-neutral-200 px-1.5 py-0.5 font-mono text-xs"
+                />
+                <select
+                  value={s.transport}
+                  onChange={(e) => {
+                    const next = [...mcpServers]
+                    next[i] = {
+                      ...next[i]!,
+                      transport: e.target.value as 'http' | 'sse',
+                    }
+                    setMcpServers(next)
+                  }}
+                  className="mt-1 block w-full rounded border border-neutral-200 px-1.5 py-0.5 text-xs"
+                >
+                  <option value="http">HTTP</option>
+                  <option value="sse">SSE</option>
+                </select>
+              </li>
+            ))}
+          </ul>
+        )}
+        <p className="mt-1 text-xs text-neutral-500">
+          Each tool exposed by these MCP servers is exposed to the
+          LLM alongside the built-in office.js skills. Spec §13 W27.
+        </p>
       </div>
     </div>
   )

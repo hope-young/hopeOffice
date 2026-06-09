@@ -73,7 +73,7 @@ export function createOpenAICompatibleChatProvider(
         // we cast at the boundary rather than retype every branch.
         messages: toChatCompletionMessages(s.messages) as unknown as import('ai').ModelMessage[],
         system: s.system?.content,
-        tools: s.tools,
+        tools: s.tools as any,
         stopWhen: stepCountIs(s.maxSteps ?? 5),
         abortSignal: s.signal,
         ...(s.temperature !== undefined ? { temperature: s.temperature } : {}),

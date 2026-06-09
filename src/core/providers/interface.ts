@@ -6,7 +6,6 @@
  *
  * No DOM, no Office, no React imports allowed in this file.
  */
-import type { Tool } from 'ai'
 import type { Cost, Message, StreamChunk } from '../types'
 
 // ---------- Usage / pricing ----------
@@ -52,10 +51,17 @@ export type StreamChatOpts = {
   messages: Message[]
   /**
    * AI SDK 5 tool definitions. The orchestrator builds this from
-   * the host's skill registry. Providers pass it through to
-   * `streamText({ tools })` unchanged.
+   * the host's skill registry + the user's MCP servers. We type
+   * this as `Record<string, unknown>` (not `Record<string, Tool>`)
+   * because:
+   *   - Built-in skills are `Tool` (Vercel AI SDK 5 V2 protocol)
+   *   - MCP tools come from `@ai-sdk/mcp` 1.0.46 (V3 protocol)
+   *   The runtime accepts both fine; the static type doesn't
+   * bridge. The provider adapter just forwards the record to
+   * `streamText({ tools })` and TS narrows the consumer's
+   * expectations inside the stream events.
    */
-  tools: Record<string, Tool>
+  tools: Record<string, unknown>
   /** Optional system prompt — orchestrator builds this from the
    *  skill registry + host. */
   system?: SystemMessage

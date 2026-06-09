@@ -94,6 +94,7 @@ const orchestrator = new Orchestrator({
   },
   getModel: () => useSettingsStore.getState().model,
   getHost: () => currentHost,
+  getMcpServers: () => useSettingsStore.getState().mcpServers,
 })
 
 /**

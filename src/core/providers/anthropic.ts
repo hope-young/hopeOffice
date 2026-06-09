@@ -126,7 +126,7 @@ export function createAnthropicProvider(opts: AnthropicProviderOpts): ChatProvid
         model: anthropic(s.model),
         system: s.system?.content,
         messages: toCoreMessages(s.messages),
-        tools: s.tools,
+        tools: s.tools as any,
         stopWhen: stepCountIs(s.maxSteps ?? 5),
         abortSignal: s.signal,
         ...(s.temperature !== undefined ? { temperature: s.temperature } : {}),

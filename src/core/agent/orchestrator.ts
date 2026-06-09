@@ -29,6 +29,7 @@ import type { ChatProvider, StreamChatOpts } from '../providers/interface'
 import type { AgentEvent, AgentState, HostKind } from '../types'
 import { toolsForHost } from './tools'
 import { buildSystemPrompt } from './system-prompt'
+import { getMcpTools } from '../mcp/client'
 
 export type OrchestratorDeps = {
   /** Provider factory: returns the current ChatProvider or null when
@@ -40,6 +41,9 @@ export type OrchestratorDeps = {
   /** Current Office host. Set once at Office.onReady; falls back
    *  to 'unsupported' in dev-mode browser preview. */
   getHost: () => HostKind
+  /** MCP server list from Settings. May be empty; we treat that
+   *  as "no MCP tools" and don't add the HTTP/SSE handshake cost. */
+  getMcpServers: () => import('../mcp/client').McpServerConfig[]
 }
 
 export class Orchestrator {
@@ -102,9 +106,27 @@ export class Orchestrator {
 
     try {
       const host = this.deps.getHost()
+      // Phase 5 tools (built-in skills) + Phase 10 tools
+      // (MCP server tools) merged into a single record the AI
+      // SDK can consume. Each MCP tool is keyed
+      // `<serverName>__<toolName>` so two servers can expose a
+      // same-named tool without collision.
+      const skillTools = toolsForHost(host)
+      const mcpTools = await getMcpTools(this.deps.getMcpServers())
+      // Cast: @ai-sdk/mcp 1.0.46 ships a `providerOptions` field
+      // typed as SharedV3ProviderOptions (Vercel AI SDK 6+),
+      // but `streamText` in ai 5.0.196 expects SharedV2. Runtime
+      // the property is optional and V2 / V3 share enough of the
+      // shape that the SDK ignores the extra bits. We cast at
+      // the boundary rather than pin the AI SDK version.
       const opts: StreamChatOpts = {
         messages: this.state.messages,
-        tools: toolsForHost(host),
+        // See comment above re: V2 / V3 mismatch. Cast through
+        // `any` because `as unknown as X` still goes through
+        // variance checks when X is a Record; the cleanest way
+        // to keep the type relationship intact is a double cast
+        // via `any`.
+        tools: { ...skillTools, ...mcpTools } as any,
         system: { content: buildSystemPrompt(host) },
         model: this.deps.getModel(),
         signal,
