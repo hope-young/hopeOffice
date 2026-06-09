@@ -52,7 +52,7 @@ const DEFAULT_MODEL: Record<ProviderId, string> = {
 const HAS_BASE_URL: Record<ProviderId, boolean> = {
   anthropic: false,
   minimax: true,
-  openai: false,
+  openai: true,
   'openai-compatible': true,
 }
 
@@ -60,8 +60,8 @@ const HAS_BASE_URL: Record<ProviderId, boolean> = {
 const FETCHES_LIVE_MODELS: Record<ProviderId, boolean> = {
   anthropic: false,
   minimax: true,
-  openai: true, // when Phase 7 lands
-  'openai-compatible': true, // when Phase 7 lands
+  openai: true,
+  'openai-compatible': true,
 }
 
 export function SettingsPanel() {
@@ -145,12 +145,8 @@ export function SettingsPanel() {
         >
           <option value="anthropic">Anthropic</option>
           <option value="minimax">MiniMax (M3)</option>
-          <option value="openai" disabled>
-            OpenAI (Phase 7)
-          </option>
-          <option value="openai-compatible" disabled>
-            OpenAI-compatible (Phase 7)
-          </option>
+          <option value="openai">OpenAI</option>
+          <option value="openai-compatible">OpenAI-compatible</option>
         </select>
       </div>
 

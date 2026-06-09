@@ -9,6 +9,8 @@
 import type { ChatProvider } from './interface'
 import { createAnthropicProvider } from './anthropic'
 import { createMiniMaxProvider } from './minimax'
+import { createOpenAIProvider } from './openai'
+import { createOpenAICompatibleProvider } from './openai-compatible'
 
 export type ProviderId = 'anthropic' | 'minimax' | 'openai' | 'openai-compatible'
 
@@ -60,13 +62,18 @@ export function createProvider(settings: ProviderSettings): ChatProvider {
         ...(settings.baseUrl ? { baseURL: settings.baseUrl } : {}),
       })
     case 'openai':
+      return createOpenAIProvider({
+        apiKey: settings.apiKey,
+        ...(settings.baseUrl ? { baseURL: settings.baseUrl } : {}),
+      })
     case 'openai-compatible':
-      // Phase 7 work (SPEC §13 W25). Generic OpenAI / OpenAI-compatible
-      // adapters can share most of minimax.ts's code — refactor that
-      // into a shared base when we add them.
-      throw new Error(
-        `Provider "${settings.providerId}" is not yet implemented (Phase 7)`,
-      )
+      return createOpenAICompatibleProvider({
+        apiKey: settings.apiKey,
+        // baseURL is mandatory for the generic provider; the
+        // Settings panel only allows picking it when the host
+        // supports it. Throwing here is a defensive guard.
+        baseURL: settings.baseUrl ?? '',
+      })
     default: {
       const _exhaustive: never = settings.providerId
       throw new Error(`Unknown providerId: ${String(_exhaustive)}`)

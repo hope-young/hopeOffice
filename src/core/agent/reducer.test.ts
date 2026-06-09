@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { INITIAL_AGENT_STATE, reduce } from './reducer'
-import type { ToolCall } from '../types'
+import type { Message, ToolCall } from '../types'
 
 function tc(overrides: Partial<ToolCall> = {}): ToolCall {
   return {
