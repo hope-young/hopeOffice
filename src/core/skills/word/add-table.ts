@@ -32,7 +32,7 @@ type AddTableArgs = z.infer<typeof args>
 type AddTableResult = { tableId: string; rows: number; columns: number }
 
 export const addTable: Skill<AddTableArgs, AddTableResult> = {
-  name: 'add-table',
+  name: 'word-add-table',
   description:
     'Insert a table into the active Word document. Optionally pre-fill cells. Returns the table id so follow-up skills can reference it.',
   host: ['word'],
