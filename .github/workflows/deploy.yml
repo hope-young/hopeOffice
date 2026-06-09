@@ -1,0 +1,87 @@
+# GitHub Actions: build + deploy dist/ to the gh-pages branch.
+#
+# Replaces the local `npm run deploy` step. After this lands, every
+# push to master (and the Vite-built `dist/manifest.xml` pointing
+# at GH Pages) goes live within ~2 minutes.
+#
+# We push to the gh-pages branch (the existing GH Pages Source
+# setting) rather than the newer "GitHub Actions" source, so the
+# repo's Pages configuration doesn't need to change.
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [master]
+  workflow_dispatch:
+
+# Allow only one concurrent deployment. A push mid-deploy queues
+# until the current one finishes, so the gh-pages branch never
+# half-reflects two builds.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+# GITHUB_TOKEN needs:
+#   - contents:write  for peaceiris/actions-gh-pages to push the
+#                    gh-pages branch back to the repo
+#   - pages:write     for the deployment to register against the
+#                    "github-pages" environment
+#   - id-token:write  for the OIDC token that some Pages
+#                    deployments require
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+jobs:
+  build-and-deploy:
+    name: Build & deploy
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run unit tests
+        run: npx vitest run
+
+      - name: Production build
+        # `build:prod` runs the Vite manifest-rewrite plugin, which
+        # rewrites every `https://localhost:3721` in
+        # `manifest.xml` to whatever SOURCE_URL resolves to. The
+        # default in `vite.config.ts` already points at this
+        # repo's project page; the env override below lets the
+        # user point at a custom domain (set as a repo-level
+        # variable in Settings -> Secrets and variables ->
+        # Actions -> Variables) without touching the source.
+        run: npm run build:prod
+        env:
+          SOURCE_URL: ${{ vars.SOURCE_URL || 'https://hope-young.github.io/hopeOffice' }}
+
+      - name: Deploy to gh-pages branch
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./dist
+          publish_branch: gh-pages
+          # Drop the previous commit history on gh-pages so the
+          # branch is a single fresh commit pointing at the
+          # current `dist/`. Cheaper to clone, no chance of an
+          # old file lingering.
+          force_orphan: true
+          keep_files: false
+          # Write a .nojekyll file so GH Pages doesn't try to
+          # rewrite our underscored file names.
+          enable_jekyll: false
+          # Match the GH user identity for the gh-pages commit.
+          user_name: github-actions[bot]
+          user_email: github-actions[bot]@users.noreply.github.com
+          commit_message: "deploy: ${{ github.event.head_commit.message }}"
