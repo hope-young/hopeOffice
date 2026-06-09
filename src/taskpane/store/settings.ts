@@ -1,19 +1,18 @@
 /**
- * Settings store — Zustand. Persists to localStorage.
+ * Settings store — Zustand + persist.
  *
- * Source of truth: SPEC §9 + §11. We use localStorage uniformly
- * (dev + prod) for now; Phase 9 swaps to Office.context.roamingSettings
- * for production per SPEC §11. (Both work in the taskpane WebView
- * today; roamingSettings is the right home in a store-deploy add-in
- * because it follows the user across machines.)
+ * Phase 9: persistence tier switches by environment.
+ *   - dev / browser preview: `localStorage`
+ *   - production (Office Add-in): `Office.context.roamingSettings`,
+ *     which follows the user across machines.
  *
- * The store deliberately does NOT hold the ChatProvider instance
- * itself — it's reconstructed on demand by the chat store from
- * `providerId`/`apiKey`/`model` so settings edits take effect
- * without a page reload.
+ * The store still exposes the same Zustand surface — we hide the
+ * storage backend behind a small Storage adapter that mirrors
+ * Zustand's `StateStorage` interface (getItem / setItem /
+ * removeItem).
  */
 import { create } from 'zustand'
-import { createJSONStorage, persist } from 'zustand/middleware'
+import { createJSONStorage, persist, type StateStorage } from 'zustand/middleware'
 import type { ProviderId } from '@core/providers/registry'
 
 export type SettingsState = {
@@ -30,14 +29,63 @@ export type SettingsState = {
   setBaseUrl: (u: string) => void
 }
 
+/**
+ * Build the right `StateStorage` for the current environment.
+ * Falls back to `localStorage` if Office is not present (dev /
+ * browser preview) or if the Office storage is missing
+ * (e.g. running the task pane outside a sideloaded context).
+ */
+export function makeStorage(): StateStorage {
+  // Prefer Office's roaming settings when present. They follow
+  // the user across machines (per Microsoft Learn) and survive
+  // both browser refresh and full add-in restart.
+  if (typeof Office !== 'undefined' && Office.context?.roamingSettings) {
+    const settings = Office.context.roamingSettings
+    return {
+      getItem: (key: string): string | null => {
+        const v = settings.get(key)
+        return v == null ? null : String(v)
+      },
+      setItem: (key: string, value: string): void => {
+        settings.set(key, value)
+      },
+      removeItem: (key: string): void => {
+        settings.remove(key)
+      },
+    }
+  }
+  // Dev / browser fallback. StateStorage's signature wants a
+  // Storage-like with getItem returning string | null, which
+  // matches localStorage's interface (with a string | null
+  // cast at the boundary).
+  if (typeof localStorage !== 'undefined') {
+    return {
+      getItem: (key: string): string | null => localStorage.getItem(key),
+      setItem: (key: string, value: string): void => {
+        localStorage.setItem(key, value)
+      },
+      removeItem: (key: string): void => {
+        localStorage.removeItem(key)
+      },
+    }
+  }
+  // No-op storage (e.g. SSR / some embedded WebView) — settings
+  // simply won't persist. Better than throwing at import time.
+  return {
+    getItem: () => null,
+    setItem: () => undefined,
+    removeItem: () => undefined,
+  }
+}
+
 const STORAGE_KEY = 'hope-office_settings'
 
 export const useSettingsStore = create<SettingsState>()(
   persist(
     (set) => ({
-      providerId: 'anthropic',
+      providerId: 'minimax',
       apiKey: '',
-      model: 'claude-sonnet-4-5',
+      model: 'MiniMax-M3',
       baseUrl: '',
 
       setProviderId: (id) => set({ providerId: id }),
@@ -47,9 +95,7 @@ export const useSettingsStore = create<SettingsState>()(
     }),
     {
       name: STORAGE_KEY,
-      storage: createJSONStorage(() => localStorage),
-      // Don't persist the setter functions (zustand does this by
-      // default, but be explicit).
+      storage: createJSONStorage(() => makeStorage()),
       partialize: (s) => ({
         providerId: s.providerId,
         apiKey: s.apiKey,
