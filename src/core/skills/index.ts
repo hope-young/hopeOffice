@@ -13,9 +13,13 @@
 import type { HostKind } from '../types'
 import type { Skill } from './types'
 import { addChart } from './excel/add-chart'
+import { addText } from './powerpoint/add-text'
+import { addSlide } from './powerpoint/add-slide'
 
 export const SKILL_REGISTRY = {
   'add-chart': addChart,
+  'add-text': addText,
+  'add-slide': addSlide,
 } as const
 
 export type SkillName = keyof typeof SKILL_REGISTRY
