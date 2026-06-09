@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>hope-Office sandbox</title>
+</head>
+<body>
+  <script src="https://appsforoffice.microsoft.com/lib/1.1/hosted/office.js"></script>
+  <script>
+    /*
+     * hope-Office sandbox — the child end of the postMessage bridge.
+     * Source of truth: SPEC_DETAILS.md §2.
+     *
+     * Lives in its own iframe so user-generated office.js code runs
+     * outside the task pane's main context. The parent (taskpane) sends
+     * an {execute, code, host} message; we wrap the code in
+     * Word.run / Excel.run / PowerPoint.run (or eval raw when Office
+     * isn't available, i.e. dev-mode preview in a plain browser) and
+     * post the result back.
+     */
+    (function () {
+      'use strict'
+
+      function postToParent(msg) {
+        window.parent.postMessage(msg, '*')
+      }
+
+      function detectHost() {
+        if (typeof Office === 'undefined' || !Office.context) return 'unsupported'
+        const h = Office.context.host
+        if (h === Office.HostType.Word) return 'word'
+        if (h === Office.HostType.Excel) return 'excel'
+        if (h === Office.HostType.PowerPoint) return 'powerpoint'
+        return 'unsupported'
+      }
+
+      function getRunner(realHost) {
+        if (realHost === 'word') return Word.run
+        if (realHost === 'excel') return Excel.run
+        if (realHost === 'powerpoint') return PowerPoint.run
+        return null
+      }
+
+      window.addEventListener('message', async function (e) {
+        // Only accept messages from our direct parent (the task pane).
+        if (e.source !== window.parent) return
+        const msg = e.data
+        if (!msg || typeof msg !== 'object') return
+
+        if (msg.type === 'ping') {
+          postToParent({ type: 'pong', id: msg.id })
+          return
+        }
+
+        if (msg.type !== 'execute') return
+
+        const { id, code, host } = msg
+        const realHost = detectHost()
+        postToParent({ type: 'host', host: realHost })
+
+        if (realHost !== host) {
+          postToParent({
+            type: 'result',
+            id: id,
+            ok: false,
+            error: {
+              message:
+                'Host mismatch: parent requested "' +
+                host +
+                '" but Office reports "' +
+                realHost +
+                '"',
+            },
+          })
+          return
+        }
+
+        try {
+          let value
+          const runner = getRunner(realHost)
+          if (runner === null) {
+            // Dev mode (no Office.js) — eval the code directly. The
+            // user still gets the roundtrip, just without a
+            // Word.run / Excel.run / PowerPoint.run wrapper.
+            // eslint-disable-next-line no-new-func
+            const userFn = new Function('return (async () => {' + code + '})()')
+            value = await userFn()
+          } else {
+            // Production: wrap in the host's runner. The user code
+            // receives the office.js context (a proxy) as its first
+            // argument; calling ctx.sync() flushes the batched commands.
+            // eslint-disable-next-line no-new-func
+            const wrapped = runner.bind(null, async function (ctx) {
+              // eslint-disable-next-line no-new-func
+              const userFn = new Function(
+                'context',
+                'return (async () => {' + code + '})()',
+              )
+              const v = await userFn(ctx)
+              await ctx.sync()
+              return v
+            })
+            value = await wrapped()
+          }
+          postToParent({ type: 'result', id: id, ok: true, value: value })
+        } catch (err) {
+          const message = err && err.message ? String(err.message) : String(err)
+          const stack = err && err.stack ? String(err.stack) : undefined
+          postToParent({
+            type: 'result',
+            id: id,
+            ok: false,
+            error: { message: message, stack: stack },
+          })
+        }
+      })
+
+      // Tell the parent we're up. The actual Office.js readiness check
+      // happens lazily inside detectHost() on the first 'execute'.
+      postToParent({ type: 'ready' })
+    })()
+  </script>
+</body>
+</html>
