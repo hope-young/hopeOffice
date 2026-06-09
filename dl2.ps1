@@ -1,1 +1,0 @@
-Compare-Object (Get-Content 'E:\OH-workspace\autoOffice-archive-2026-06-08\manifest.production.xml') (Get-Content 'E:\OH-workspace\hopeOffice\manifest.xml') | Select-Object -First 80 | Format-Table -AutoSize
