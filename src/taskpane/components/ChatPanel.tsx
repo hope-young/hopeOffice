@@ -8,7 +8,7 @@
  */
 import { useState } from 'react'
 import type { Message, ToolCall } from '@core/types'
-import { useChatStore } from '../store/chat'
+import { clearChatHistory, useChatStore } from '../store/chat'
 import { useSettingsStore } from '../store/settings'
 
 export function ChatPanel() {
@@ -57,7 +57,13 @@ export function ChatPanel() {
 
         {state.draft && (
           <MessageBubble
-            message={{ role: 'assistant', content: state.draft }}
+            message={{
+              role: 'assistant',
+              content: state.draft,
+              ...(state.draftReasoning
+                ? { reasoning: state.draftReasoning }
+                : {}),
+            }}
             streaming
           />
         )}
@@ -72,6 +78,22 @@ export function ChatPanel() {
           <p className="text-xs text-neutral-400 text-center">
             {state.status === 'executing' ? 'Executing tool…' : 'Streaming…'}
           </p>
+        )}
+
+        {state.messages.length > 0 && !isStreaming && (
+          <div className="text-center">
+            <button
+              type="button"
+              onClick={() => {
+                if (window.confirm('Clear the entire conversation history?')) {
+                  clearChatHistory()
+                }
+              }}
+              className="text-xs text-neutral-500 underline hover:text-red-600"
+            >
+              Clear history
+            </button>
+          </div>
         )}
 
         {state.toolCalls.length > 0 && (
@@ -158,6 +180,16 @@ function MessageBubble({
             : 'max-w-[80%] rounded-2xl bg-neutral-100 px-3 py-2 text-sm text-neutral-800'
         }
       >
+        {message.role === 'assistant' && message.reasoning ? (
+          <details className="mb-2 rounded bg-white/60 px-2 py-1 text-xs text-neutral-600">
+            <summary className="cursor-pointer select-none font-medium">
+              thinking
+            </summary>
+            <pre className="mt-1 whitespace-pre-wrap break-words font-sans">
+              {message.reasoning}
+            </pre>
+          </details>
+        ) : null}
         <p className="whitespace-pre-wrap break-words">
           {message.content}
           {streaming ? <span className="ml-0.5 animate-pulse">▍</span> : null}

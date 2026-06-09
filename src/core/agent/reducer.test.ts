@@ -117,6 +117,73 @@ describe('reduce — approval', () => {
   })
 })
 
+describe('reduce — reasoning', () => {
+  it('reasoning-delta accumulates into draftReasoning while streaming', () => {
+    let s = reduce(INITIAL_AGENT_STATE, { type: 'user-send', text: 'hi' })
+    s = reduce(s, { type: 'reasoning-delta', delta: 'Plan: ' })
+    s = reduce(s, { type: 'reasoning-delta', delta: 'compute x.' })
+    expect(s.draftReasoning).toBe('Plan: compute x.')
+    expect(s.draft).toBe('')
+  })
+
+  it('reasoning-delta is a no-op when not streaming', () => {
+    const s = reduce(INITIAL_AGENT_STATE, {
+      type: 'reasoning-delta',
+      delta: 'x',
+    })
+    expect(s).toBe(INITIAL_AGENT_STATE)
+  })
+
+  it('stream-end folds draftReasoning into the assistant message', () => {
+    let s = reduce(INITIAL_AGENT_STATE, { type: 'user-send', text: 'q' })
+    s = reduce(s, { type: 'reasoning-delta', delta: 'thinking…' })
+    s = reduce(s, { type: 'stream-token', token: 'answer' })
+    s = reduce(s, { type: 'stream-end' })
+    const assistant = s.messages.at(-1)
+    expect(assistant?.role).toBe('assistant')
+    if (assistant?.role === 'assistant') {
+      expect(assistant.content).toBe('answer')
+      expect(assistant.reasoning).toBe('thinking…')
+    }
+  })
+
+  it('stream-end omits reasoning when draftReasoning is empty', () => {
+    let s = reduce(INITIAL_AGENT_STATE, { type: 'user-send', text: 'q' })
+    s = reduce(s, { type: 'stream-token', token: 'plain' })
+    s = reduce(s, { type: 'stream-end' })
+    const assistant = s.messages.at(-1)
+    if (assistant?.role === 'assistant') {
+      expect(assistant.reasoning).toBeUndefined()
+    } else {
+      throw new Error('expected assistant message')
+    }
+  })
+
+  it('user-send clears the prior draftReasoning', () => {
+    let s = reduce(INITIAL_AGENT_STATE, { type: 'user-send', text: 'a' })
+    s = reduce(s, { type: 'reasoning-delta', delta: 'x' })
+    s = reduce(s, { type: 'stream-end' })
+    s = reduce(s, { type: 'user-send', text: 'b' })
+    expect(s.draftReasoning).toBe('')
+  })
+})
+
+describe('reduce — restore-messages', () => {
+  it('wholesale replaces messages', () => {
+    let s = reduce(INITIAL_AGENT_STATE, { type: 'user-send', text: 'a' })
+    s = reduce(s, { type: 'stream-token', token: 'r' })
+    s = reduce(s, { type: 'stream-end' })
+    const replaced: Message[] = [
+      { role: 'user', content: 'history' },
+      { role: 'assistant', content: 'preserved' },
+    ]
+    const next = reduce(s, { type: 'restore-messages', messages: replaced })
+    expect(next.messages).toEqual(replaced)
+    expect(next.draft).toBe('')
+    expect(next.draftReasoning).toBe('')
+  })
+})
+
 describe('reduce — error / reset', () => {
   it('error sets status and keeps messages', () => {
     let s = reduce(INITIAL_AGENT_STATE, { type: 'user-send', text: 'hi' })

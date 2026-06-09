@@ -63,7 +63,13 @@ export class Orchestrator {
     }
   }
 
-  private dispatch(event: AgentEvent): void {
+  /**
+   * Public so the chat store can dispatch `restore-messages` /
+   * `clear` events from outside the orchestrator's normal
+   * user-send flow. Not part of the intended API surface for
+   * UI components — use `send` / `abort` / `reset`.
+   */
+  dispatch(event: AgentEvent): void {
     this.state = reduce(this.state, event)
     this.listener?.(this.state)
   }
@@ -113,9 +119,13 @@ export class Orchestrator {
             this.dispatch({ type: 'stream-token', token: chunk.delta })
             break
           case 'reasoning-delta':
-            // Surface reasoning in the draft for now (Phase 6 may
-            // split it out into a collapsible panel).
-            this.dispatch({ type: 'stream-token', token: chunk.delta })
+            // Reasoning models (e.g. MiniMax M3) emit a separate
+            // delta stream for `<think>`-style blocks. The reducer
+            // stores it on `draftReasoning` and the ChatPanel
+            // renders it in a collapsible <details> block. Don't
+            // fold it into `state.draft` — that would mix
+            // reasoning into the visible answer.
+            this.dispatch({ type: 'reasoning-delta', delta: chunk.delta })
             break
           case 'tool-call-start':
             this.dispatch({ type: 'tool-call-start', toolCall: chunk.toolCall })

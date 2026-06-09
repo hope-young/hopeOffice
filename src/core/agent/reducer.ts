@@ -18,6 +18,7 @@ import type { AgentEvent, AgentState, Cost, Message, ToolCall } from '../types'
 export const INITIAL_AGENT_STATE: AgentState = {
   messages: [],
   draft: '',
+  draftReasoning: '',
   toolCalls: [],
   status: 'idle',
   cost: emptyCost(),
@@ -30,13 +31,14 @@ function emptyCost(): Cost {
 export function reduce(state: AgentState, event: AgentEvent): AgentState {
   switch (event.type) {
     case 'user-send': {
-      // New user turn: append the message, clear the draft, switch
+      // New user turn: append the message, clear both drafts, switch
       // to streaming, drop any stale error.
       const userMsg: Message = { role: 'user', content: event.text }
       return {
         ...state,
         messages: [...state.messages, userMsg],
         draft: '',
+        draftReasoning: '',
         toolCalls: [],
         status: 'streaming',
         error: undefined,
@@ -49,21 +51,42 @@ export function reduce(state: AgentState, event: AgentEvent): AgentState {
       return { ...state, draft: state.draft + event.token }
     }
 
+    case 'reasoning-delta': {
+      // Same gating as stream-token — only meaningful mid-stream.
+      if (state.status !== 'streaming') return state
+      return { ...state, draftReasoning: state.draftReasoning + event.delta }
+    }
+
     case 'stream-end': {
       // Commit the draft as a finished assistant message. If the LLM
       // produced no text (e.g. it only emitted tool calls), don't add
       // an empty message — the tool-call-start events have already
-      // updated state.toolCalls.
+      // updated state.toolCalls. Reasoning is folded in only when
+      // non-empty so we don't store `reasoning: ''` on every turn.
       if (!state.draft && state.toolCalls.length === 0) {
-        return { ...state, status: 'idle' }
+        return {
+          ...state,
+          draft: '',
+          draftReasoning: '',
+          status: 'idle',
+        }
       }
-      const assistantMsg: Message = state.toolCalls.length
+      // Build the assistant message in two steps so the spread that
+      // attaches `reasoning` doesn't get lost to a narrower inferred
+      // type on the first literal.
+      const baseAssistant: Message = state.toolCalls.length
         ? { role: 'assistant', content: state.draft, toolCalls: [...state.toolCalls] }
         : { role: 'assistant', content: state.draft }
+      const withReasoning: Message = {
+        ...baseAssistant,
+        reasoning: state.draftReasoning,
+      }
+      const assistantMsg: Message = state.draftReasoning ? withReasoning : baseAssistant
       return {
         ...state,
         messages: [...state.messages, assistantMsg],
         draft: '',
+        draftReasoning: '',
         toolCalls: [],
         status: 'idle',
       }
@@ -129,6 +152,16 @@ export function reduce(state: AgentState, event: AgentEvent): AgentState {
 
     case 'reset': {
       return { ...INITIAL_AGENT_STATE, messages: state.messages }
+    }
+
+    case 'restore-messages': {
+      // Wholesale replace (used by history-restore on app start).
+      // Discard any in-flight draft / error so the UI settles to
+      // the restored state.
+      return {
+        ...INITIAL_AGENT_STATE,
+        messages: event.messages,
+      }
     }
   }
 

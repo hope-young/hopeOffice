@@ -15,7 +15,14 @@ export type Role = 'user' | 'assistant' | 'tool'
 
 export type Message =
   | { role: 'user'; content: string }
-  | { role: 'assistant'; content: string; toolCalls?: ToolCall[] }
+  | {
+      role: 'assistant'
+      content: string
+      /** Reasoning model output (e.g. MiniMax M3's `<think>` block).
+       *  Stored separately so the UI can collapse it. */
+      reasoning?: string
+      toolCalls?: ToolCall[]
+    }
   | { role: 'tool'; toolCallId: string; toolName: string; content: string }
 
 // ---------- Streaming ----------
@@ -73,8 +80,11 @@ export type Cost = {
 
 export type AgentState = {
   messages: Message[]
-  /** Current streaming delta. */
+  /** Current streaming text delta. */
   draft: string
+  /** Streaming reasoning delta (collapsed in the UI; committed to
+   *  `messages[last].reasoning` on stream-end). */
+  draftReasoning: string
   toolCalls: ToolCall[]
   status: 'idle' | 'streaming' | 'awaiting-approval' | 'executing' | 'error'
   cost: Cost
@@ -85,6 +95,9 @@ export type AgentState = {
 export type AgentEvent =
   | { type: 'user-send'; text: string }
   | { type: 'stream-token'; token: string }
+  /** A reasoning-model delta (separate from `stream-token`) so the
+   *  UI can render `<think>` blocks collapsed. */
+  | { type: 'reasoning-delta'; delta: string }
   | { type: 'stream-end' }
   | { type: 'tool-call-start'; toolCall: ToolCall }
   | { type: 'tool-call-result'; toolCallId: string; result: unknown }
@@ -93,3 +106,6 @@ export type AgentEvent =
   | { type: 'approval-decided'; approved: boolean }
   | { type: 'error'; error: Error }
   | { type: 'reset' }
+  /** Internal: replace the messages array wholesale. Used by the
+   *  history-restore path on app start. */
+  | { type: 'restore-messages'; messages: Message[] }
