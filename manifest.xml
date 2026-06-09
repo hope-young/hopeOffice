@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+﻿<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <OfficeApp
   xmlns="http://schemas.microsoft.com/office/appforoffice/1.1"
   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
@@ -6,7 +6,7 @@
   xsi:type="TaskPaneApp">
 
   <Id>1458732e-2964-4e0d-821e-2755bb07c22f</Id>
-  <Version>0.1.0.0</Version>
+  <Version>1.0.0.0</Version>
   <ProviderName>hope_young</ProviderName>
   <DefaultLocale>en-US</DefaultLocale>
   <DisplayName DefaultValue="hope-Office">
@@ -42,12 +42,12 @@
     <Description resid="Description" />
 
     <Requirements>
-      <Sets DefaultMinVersion="1.0">
-        <Set Name="WordApi" MinVersion="1.4" />
-        <Set Name="ExcelApi" MinVersion="1.4" />
-        <Set Name="PowerPointApi" MinVersion="1.4" />
-        <Set Name="CustomFunctions" MinVersion="1.1" />
-      </Sets>
+      <bt:Sets DefaultMinVersion="1.0">
+        <bt:Set Name="WordApi" MinVersion="1.4" />
+        <bt:Set Name="ExcelApi" MinVersion="1.4" />
+        <bt:Set Name="PowerPointApi" MinVersion="1.4" />
+        <bt:Set Name="CustomFunctions" MinVersion="1.1" />
+      </bt:Sets>
     </Requirements>
 
     <Hosts>
@@ -65,7 +65,7 @@
           </GetStarted>
           <FunctionFile resid="Taskpane.Url" />
           <ExtensionPoint xsi:type="PrimaryCommandSurface">
-            <CustomTab id="hopeOfficeTab">
+            <OfficeTab id="TabHome">
               <Group id="grpMain">
                 <Label resid="grpMainLabel" />
                 <Icon>
@@ -182,7 +182,7 @@
                   </Action>
                 </Control>
               </Group>
-            </CustomTab>
+            </OfficeTab>
           </ExtensionPoint>
         </DesktopFormFactor>
       </Host>
@@ -200,7 +200,7 @@
           </GetStarted>
           <FunctionFile resid="Taskpane.Url" />
           <ExtensionPoint xsi:type="PrimaryCommandSurface">
-            <CustomTab id="hopeOfficeTab">
+            <OfficeTab id="TabHome">
               <Group id="grpMain">
                 <Label resid="grpMainLabel" />
                 <Icon>
@@ -317,7 +317,7 @@
                   </Action>
                 </Control>
               </Group>
-            </CustomTab>
+            </OfficeTab>
           </ExtensionPoint>
         </DesktopFormFactor>
       </Host>
@@ -335,7 +335,7 @@
           </GetStarted>
           <FunctionFile resid="Taskpane.Url" />
           <ExtensionPoint xsi:type="PrimaryCommandSurface">
-            <CustomTab id="hopeOfficeTab">
+            <OfficeTab id="TabHome">
               <Group id="grpMain">
                 <Label resid="grpMainLabel" />
                 <Icon>
@@ -452,7 +452,7 @@
                   </Action>
                 </Control>
               </Group>
-            </CustomTab>
+            </OfficeTab>
           </ExtensionPoint>
         </DesktopFormFactor>
       </Host>
