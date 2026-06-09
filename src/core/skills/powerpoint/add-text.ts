@@ -31,7 +31,11 @@ type AddTextArgs = z.infer<typeof args>
 type AddTextResult = { shapeId: string; slideIndex: number }
 
 export const addText: Skill<AddTextArgs, AddTextResult> = {
-  name: 'add-text',
+  // The host prefix in the name disambiguates from the Word
+  // `word-add-text` skill — they have similar args but very
+  // different runtime semantics (text box on a slide vs.
+  // paragraph in a document).
+  name: 'ppt-add-text',
   description:
     'Insert a text box on a slide with the given text. Slide numbers are 1-based. Optionally set a vertical anchor and font size.',
   host: ['powerpoint'],

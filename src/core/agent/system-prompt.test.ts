@@ -25,7 +25,7 @@ describe('buildSystemPrompt', () => {
   })
 
   it('marks empty when no skills are registered for the host', () => {
-    const p = buildSystemPrompt('word')
+    const p = buildSystemPrompt('unsupported')
     expect(p.toLowerCase()).toContain('no skills')
   })
 

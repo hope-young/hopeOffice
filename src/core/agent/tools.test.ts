@@ -10,7 +10,6 @@ import { toolsForHost } from './tools'
 
 describe('toolsForHost', () => {
   it('returns an empty object for hosts with no skills', () => {
-    expect(toolsForHost('word')).toEqual({})
     expect(toolsForHost('unsupported')).toEqual({})
   })
 
@@ -20,11 +19,22 @@ describe('toolsForHost', () => {
     expect(tools['add-chart']?.description).toContain('chart')
   })
 
-  it('returns add-text + add-slide for powerpoint', () => {
+  it('returns ppt-add-text + add-slide for powerpoint', () => {
     const tools = toolsForHost('powerpoint')
-    expect(Object.keys(tools).sort()).toEqual(['add-slide', 'add-text'])
-    expect(tools['add-text']?.description.toLowerCase()).toContain('text')
-    expect(tools['add-slide']?.description.toLowerCase()).toContain('slide')
+    expect(Object.keys(tools).sort()).toEqual(['add-slide', 'ppt-add-text'])
+    const pptAddText = tools['ppt-add-text']!
+    expect((pptAddText.description ?? '').toLowerCase()).toContain('text')
+    const addSlide = tools['add-slide']!
+    expect((addSlide.description ?? '').toLowerCase()).toContain('slide')
+  })
+
+  it('returns add-table + word-add-text for word', () => {
+    const tools = toolsForHost('word')
+    expect(Object.keys(tools).sort()).toEqual(['add-table', 'word-add-text'])
+    const addTable = tools['add-table']!
+    expect((addTable.description ?? '').toLowerCase()).toContain('table')
+    const wordAddText = tools['word-add-text']!
+    expect((wordAddText.description ?? '').toLowerCase()).toContain('text')
   })
 
   it('forwards executor errors from skill.execute as tool rejections', async () => {
@@ -32,9 +42,7 @@ describe('toolsForHost', () => {
     // namespace is missing. The skill itself throws synchronously
     // before office.js is touched.
     const tools = toolsForHost('excel')
-    const tool = tools['add-chart']
-    expect(tool).toBeDefined()
-    if (!tool) return
+    const tool = tools['add-chart']!
 
     // The execute function lives on the AI SDK Tool object.
     // Type assertion: we know our `execute` returns Promise<unknown>
@@ -47,8 +55,7 @@ describe('toolsForHost', () => {
 
   it('rejects malformed args at the Zod parse boundary', async () => {
     const tools = toolsForHost('excel')
-    const tool = tools['add-chart']
-    if (!tool) throw new Error('add-chart tool missing')
+    const tool = tools['add-chart']!
     const exec = (tool as unknown as { execute: (input: unknown) => Promise<unknown> }).execute
     // Zod parse failure should bubble up as a thrown error.
     await expect(

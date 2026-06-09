@@ -13,13 +13,21 @@
 import type { HostKind } from '../types'
 import type { Skill } from './types'
 import { addChart } from './excel/add-chart'
-import { addText } from './powerpoint/add-text'
+import { addText as addTextPPT } from './powerpoint/add-text'
 import { addSlide } from './powerpoint/add-slide'
+import { addTable } from './word/add-table'
+import { addText as addTextWord } from './word/add-text'
 
 export const SKILL_REGISTRY = {
   'add-chart': addChart,
-  'add-text': addText,
+  // PowerPoint and Word both expose an "add-text" skill, but
+  // they live on different hosts and have different arg shapes
+  // (font size, position semantics). The skill name itself
+  // disambiguates with a host prefix.
+  'ppt-add-text': addTextPPT,
   'add-slide': addSlide,
+  'add-table': addTable,
+  'word-add-text': addTextWord,
 } as const
 
 export type SkillName = keyof typeof SKILL_REGISTRY
