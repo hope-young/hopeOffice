@@ -1,4 +1,26 @@
-﻿<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<!--
+  Manifest for hope-Office Web Add-in.
+  Proven-valid shape — mirrors autoOffice's archived
+  manifest which the user successfully sideloaded in the
+  past. Diff vs. an Office Add-in tutorial's starter:
+
+    - No <Runtimes>            (V1_0 schema doesn't take it;
+                                 V1_1 introduced it. Excel
+                                 online rejects it in V1_0.)
+    - No <FunctionFile>        (would require a separate JS
+                                 handler page registered via
+                                 Office.initialize; we don't
+                                 have one and don't need one.)
+    - No <Requirements>/<bt:Sets>
+                                (optional; autoOffice doesn't
+                                 declare it.)
+    - Only ShowTaskpane actions (no ExecuteFunction).
+
+  Schema: VersionOverridesV1_0. CustomTab is V1_1-only,
+  so we land the buttons in the host's existing Home tab
+  with <OfficeTab id="TabHome">.
+-->
 <OfficeApp
   xmlns="http://schemas.microsoft.com/office/appforoffice/1.1"
   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
@@ -38,32 +60,16 @@
   <VersionOverrides
     xmlns="http://schemas.microsoft.com/office/taskpaneappversionoverrides"
     xsi:type="VersionOverridesV1_0">
-
-    <Description resid="Description" />
-
-    <Requirements>
-      <bt:Sets DefaultMinVersion="1.0">
-        <bt:Set Name="WordApi" MinVersion="1.4" />
-        <bt:Set Name="ExcelApi" MinVersion="1.4" />
-        <bt:Set Name="PowerPointApi" MinVersion="1.4" />
-        <bt:Set Name="CustomFunctions" MinVersion="1.1" />
-      </bt:Sets>
-    </Requirements>
-
     <Hosts>
 
       <!-- ====================== Word ====================== -->
       <Host xsi:type="Document">
-        <Runtimes>
-          <Runtime resid="Taskpane.Url" />
-        </Runtimes>
         <DesktopFormFactor>
           <GetStarted>
             <Title resid="GetStarted.Title" />
             <Description resid="GetStarted.Description" />
             <LearnMoreUrl resid="GetStarted.LearnMoreUrl" />
           </GetStarted>
-          <FunctionFile resid="Taskpane.Url" />
           <ExtensionPoint xsi:type="PrimaryCommandSurface">
             <OfficeTab id="TabHome">
               <Group id="grpMain">
@@ -101,8 +107,10 @@
                     <bt:Image size="32" resid="Icon.32x32" />
                     <bt:Image size="80" resid="Icon.80x80" />
                   </Icon>
-                  <Action xsi:type="ExecuteFunction">
-                    <FunctionName>newChat</FunctionName>
+                  <Action xsi:type="ShowTaskpane">
+                    <TaskpaneId>hopeOfficeTaskPane</TaskpaneId>
+                    <SourceLocation resid="Taskpane.Url" />
+                    <Title resid="newChat.Label" />
                   </Action>
                 </Control>
               </Group>
@@ -124,8 +132,10 @@
                     <bt:Image size="32" resid="Icon.32x32" />
                     <bt:Image size="80" resid="Icon.80x80" />
                   </Icon>
-                  <Action xsi:type="ExecuteFunction">
-                    <FunctionName>openHistory</FunctionName>
+                  <Action xsi:type="ShowTaskpane">
+                    <TaskpaneId>hopeOfficeTaskPane</TaskpaneId>
+                    <SourceLocation resid="Taskpane.Url" />
+                    <Title resid="openHistory.Label" />
                   </Action>
                 </Control>
                 <Control xsi:type="Button" id="exportCurrent">
@@ -139,8 +149,10 @@
                     <bt:Image size="32" resid="Icon.32x32" />
                     <bt:Image size="80" resid="Icon.80x80" />
                   </Icon>
-                  <Action xsi:type="ExecuteFunction">
-                    <FunctionName>exportCurrent</FunctionName>
+                  <Action xsi:type="ShowTaskpane">
+                    <TaskpaneId>hopeOfficeTaskPane</TaskpaneId>
+                    <SourceLocation resid="Taskpane.Url" />
+                    <Title resid="exportCurrent.Label" />
                   </Action>
                 </Control>
               </Group>
@@ -162,8 +174,10 @@
                     <bt:Image size="32" resid="Icon.32x32" />
                     <bt:Image size="80" resid="Icon.80x80" />
                   </Icon>
-                  <Action xsi:type="ExecuteFunction">
-                    <FunctionName>openSettings</FunctionName>
+                  <Action xsi:type="ShowTaskpane">
+                    <TaskpaneId>hopeOfficeTaskPane</TaskpaneId>
+                    <SourceLocation resid="Taskpane.Url" />
+                    <Title resid="openSettings.Label" />
                   </Action>
                 </Control>
                 <Control xsi:type="Button" id="manageMcp">
@@ -177,8 +191,10 @@
                     <bt:Image size="32" resid="Icon.32x32" />
                     <bt:Image size="80" resid="Icon.80x80" />
                   </Icon>
-                  <Action xsi:type="ExecuteFunction">
-                    <FunctionName>manageMcp</FunctionName>
+                  <Action xsi:type="ShowTaskpane">
+                    <TaskpaneId>hopeOfficeTaskPane</TaskpaneId>
+                    <SourceLocation resid="Taskpane.Url" />
+                    <Title resid="manageMcp.Label" />
                   </Action>
                 </Control>
               </Group>
@@ -189,16 +205,12 @@
 
       <!-- ====================== Excel ====================== -->
       <Host xsi:type="Workbook">
-        <Runtimes>
-          <Runtime resid="Taskpane.Url" />
-        </Runtimes>
         <DesktopFormFactor>
           <GetStarted>
             <Title resid="GetStarted.Title" />
             <Description resid="GetStarted.Description" />
             <LearnMoreUrl resid="GetStarted.LearnMoreUrl" />
           </GetStarted>
-          <FunctionFile resid="Taskpane.Url" />
           <ExtensionPoint xsi:type="PrimaryCommandSurface">
             <OfficeTab id="TabHome">
               <Group id="grpMain">
@@ -236,8 +248,10 @@
                     <bt:Image size="32" resid="Icon.32x32" />
                     <bt:Image size="80" resid="Icon.80x80" />
                   </Icon>
-                  <Action xsi:type="ExecuteFunction">
-                    <FunctionName>newChat</FunctionName>
+                  <Action xsi:type="ShowTaskpane">
+                    <TaskpaneId>hopeOfficeTaskPane</TaskpaneId>
+                    <SourceLocation resid="Taskpane.Url" />
+                    <Title resid="newChat.Label" />
                   </Action>
                 </Control>
               </Group>
@@ -259,8 +273,10 @@
                     <bt:Image size="32" resid="Icon.32x32" />
                     <bt:Image size="80" resid="Icon.80x80" />
                   </Icon>
-                  <Action xsi:type="ExecuteFunction">
-                    <FunctionName>openHistory</FunctionName>
+                  <Action xsi:type="ShowTaskpane">
+                    <TaskpaneId>hopeOfficeTaskPane</TaskpaneId>
+                    <SourceLocation resid="Taskpane.Url" />
+                    <Title resid="openHistory.Label" />
                   </Action>
                 </Control>
                 <Control xsi:type="Button" id="exportCurrent">
@@ -274,8 +290,10 @@
                     <bt:Image size="32" resid="Icon.32x32" />
                     <bt:Image size="80" resid="Icon.80x80" />
                   </Icon>
-                  <Action xsi:type="ExecuteFunction">
-                    <FunctionName>exportCurrent</FunctionName>
+                  <Action xsi:type="ShowTaskpane">
+                    <TaskpaneId>hopeOfficeTaskPane</TaskpaneId>
+                    <SourceLocation resid="Taskpane.Url" />
+                    <Title resid="exportCurrent.Label" />
                   </Action>
                 </Control>
               </Group>
@@ -297,8 +315,10 @@
                     <bt:Image size="32" resid="Icon.32x32" />
                     <bt:Image size="80" resid="Icon.80x80" />
                   </Icon>
-                  <Action xsi:type="ExecuteFunction">
-                    <FunctionName>openSettings</FunctionName>
+                  <Action xsi:type="ShowTaskpane">
+                    <TaskpaneId>hopeOfficeTaskPane</TaskpaneId>
+                    <SourceLocation resid="Taskpane.Url" />
+                    <Title resid="openSettings.Label" />
                   </Action>
                 </Control>
                 <Control xsi:type="Button" id="manageMcp">
@@ -312,8 +332,10 @@
                     <bt:Image size="32" resid="Icon.32x32" />
                     <bt:Image size="80" resid="Icon.80x80" />
                   </Icon>
-                  <Action xsi:type="ExecuteFunction">
-                    <FunctionName>manageMcp</FunctionName>
+                  <Action xsi:type="ShowTaskpane">
+                    <TaskpaneId>hopeOfficeTaskPane</TaskpaneId>
+                    <SourceLocation resid="Taskpane.Url" />
+                    <Title resid="manageMcp.Label" />
                   </Action>
                 </Control>
               </Group>
@@ -324,16 +346,12 @@
 
       <!-- ====================== PowerPoint ====================== -->
       <Host xsi:type="Presentation">
-        <Runtimes>
-          <Runtime resid="Taskpane.Url" />
-        </Runtimes>
         <DesktopFormFactor>
           <GetStarted>
             <Title resid="GetStarted.Title" />
             <Description resid="GetStarted.Description" />
             <LearnMoreUrl resid="GetStarted.LearnMoreUrl" />
           </GetStarted>
-          <FunctionFile resid="Taskpane.Url" />
           <ExtensionPoint xsi:type="PrimaryCommandSurface">
             <OfficeTab id="TabHome">
               <Group id="grpMain">
@@ -371,8 +389,10 @@
                     <bt:Image size="32" resid="Icon.32x32" />
                     <bt:Image size="80" resid="Icon.80x80" />
                   </Icon>
-                  <Action xsi:type="ExecuteFunction">
-                    <FunctionName>newChat</FunctionName>
+                  <Action xsi:type="ShowTaskpane">
+                    <TaskpaneId>hopeOfficeTaskPane</TaskpaneId>
+                    <SourceLocation resid="Taskpane.Url" />
+                    <Title resid="newChat.Label" />
                   </Action>
                 </Control>
               </Group>
@@ -394,8 +414,10 @@
                     <bt:Image size="32" resid="Icon.32x32" />
                     <bt:Image size="80" resid="Icon.80x80" />
                   </Icon>
-                  <Action xsi:type="ExecuteFunction">
-                    <FunctionName>openHistory</FunctionName>
+                  <Action xsi:type="ShowTaskpane">
+                    <TaskpaneId>hopeOfficeTaskPane</TaskpaneId>
+                    <SourceLocation resid="Taskpane.Url" />
+                    <Title resid="openHistory.Label" />
                   </Action>
                 </Control>
                 <Control xsi:type="Button" id="exportCurrent">
@@ -409,8 +431,10 @@
                     <bt:Image size="32" resid="Icon.32x32" />
                     <bt:Image size="80" resid="Icon.80x80" />
                   </Icon>
-                  <Action xsi:type="ExecuteFunction">
-                    <FunctionName>exportCurrent</FunctionName>
+                  <Action xsi:type="ShowTaskpane">
+                    <TaskpaneId>hopeOfficeTaskPane</TaskpaneId>
+                    <SourceLocation resid="Taskpane.Url" />
+                    <Title resid="exportCurrent.Label" />
                   </Action>
                 </Control>
               </Group>
@@ -432,8 +456,10 @@
                     <bt:Image size="32" resid="Icon.32x32" />
                     <bt:Image size="80" resid="Icon.80x80" />
                   </Icon>
-                  <Action xsi:type="ExecuteFunction">
-                    <FunctionName>openSettings</FunctionName>
+                  <Action xsi:type="ShowTaskpane">
+                    <TaskpaneId>hopeOfficeTaskPane</TaskpaneId>
+                    <SourceLocation resid="Taskpane.Url" />
+                    <Title resid="openSettings.Label" />
                   </Action>
                 </Control>
                 <Control xsi:type="Button" id="manageMcp">
@@ -447,8 +473,10 @@
                     <bt:Image size="32" resid="Icon.32x32" />
                     <bt:Image size="80" resid="Icon.80x80" />
                   </Icon>
-                  <Action xsi:type="ExecuteFunction">
-                    <FunctionName>manageMcp</FunctionName>
+                  <Action xsi:type="ShowTaskpane">
+                    <TaskpaneId>hopeOfficeTaskPane</TaskpaneId>
+                    <SourceLocation resid="Taskpane.Url" />
+                    <Title resid="manageMcp.Label" />
                   </Action>
                 </Control>
               </Group>
@@ -470,8 +498,7 @@
         <bt:Url id="GetStarted.LearnMoreUrl" DefaultValue="https://github.com/hope-young/hopeOffice" />
       </bt:Urls>
       <bt:ShortStrings>
-        <bt:String id="Description" DefaultValue="hope-Office task pane" />
-        <bt:String id="GetStarted.Title" DefaultValue="hope-Office" />
+        <bt:String id="GetStarted.Title" DefaultValue="hope-Office is ready" />
         <bt:String id="grpMainLabel" DefaultValue="Chat" />
         <bt:String id="grpHistoryLabel" DefaultValue="History" />
         <bt:String id="grpSettingsLabel" DefaultValue="Settings" />
