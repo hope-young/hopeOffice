@@ -5,8 +5,8 @@ import { describe, expect, it } from 'vitest'
 import { SKILL_REGISTRY, listSkillsForHost } from './index'
 
 describe('SKILL_REGISTRY', () => {
-  it('contains 19 skills (Phase 8)', () => {
-    expect(Object.keys(SKILL_REGISTRY).length).toBe(19)
+  it('contains 24 skills (Phase 8 + chart format expansion)', () => {
+    expect(Object.keys(SKILL_REGISTRY).length).toBe(24)
   })
 
   it('every skill declares a non-empty name + description + host list', () => {
@@ -28,7 +28,12 @@ describe('listSkillsForHost', () => {
     expect(names).toEqual([
       'add-chart',
       'add-formula',
+      'format-chart',
       'set-cell-value',
+      'set-chart-axis-title',
+      'set-chart-data-labels',
+      'set-chart-legend',
+      'set-chart-title',
       'sort-range',
       'xl-add-table',
       'xl-find-text',

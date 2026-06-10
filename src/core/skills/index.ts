@@ -19,6 +19,11 @@ import { addFormula } from './excel/add-formula'
 import { setCellValue } from './excel/set-cell-value'
 import { sortRange } from './excel/sort-range'
 import { findText as excelFindText } from './excel/find-text'
+import { formatChart } from './excel/format-chart'
+import { setChartTitle } from './excel/set-chart-title'
+import { setChartAxisTitle } from './excel/set-chart-axis-title'
+import { setChartDataLabels } from './excel/set-chart-data-labels'
+import { setChartLegend } from './excel/set-chart-legend'
 
 import { addText as pptAddText } from './powerpoint/add-text'
 import { addSlide } from './powerpoint/add-slide'
@@ -43,6 +48,11 @@ export const SKILL_REGISTRY = {
   'set-cell-value': setCellValue,
   'sort-range': sortRange,
   'xl-find-text': excelFindText,
+  'format-chart': formatChart,
+  'set-chart-title': setChartTitle,
+  'set-chart-axis-title': setChartAxisTitle,
+  'set-chart-data-labels': setChartDataLabels,
+  'set-chart-legend': setChartLegend,
   // --- PowerPoint ---
   'ppt-add-text': pptAddText,
   'add-slide': addSlide,

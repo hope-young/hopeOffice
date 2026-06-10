@@ -9,13 +9,18 @@ describe('toolsForHost', () => {
     expect(toolsForHost('unsupported')).toEqual({})
   })
 
-  it('returns 6 Excel skills', () => {
+  it('returns 11 Excel skills', () => {
     const tools = toolsForHost('excel')
     const names = Object.keys(tools).sort()
     expect(names).toEqual([
       'add-chart',
       'add-formula',
+      'format-chart',
       'set-cell-value',
+      'set-chart-axis-title',
+      'set-chart-data-labels',
+      'set-chart-legend',
+      'set-chart-title',
       'sort-range',
       'xl-add-table',
       'xl-find-text',

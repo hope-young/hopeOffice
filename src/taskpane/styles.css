@@ -1,5 +1,30 @@
 @import "tailwindcss";
 
+/*
+  hope-Office brand colors — anchored on the M365 Excel accent
+  green rather than the previous placeholder blue. Per the
+  2025 brand refresh (sikenman palette for Excel 365), the
+  canonical set is:
+    #107c41  primary Excel green
+    #21a366  hover / active
+    #0d7239  pressed / dark
+    #33c481  light variant (not used directly yet)
+  with a near-tint background for hover surfaces:
+    #e8f5ee  soft tint
+    #d4ebd9  medium tint
+  All five were sampled from the official M365 Excel app icon
+  and the in-app accent ring around the page indicator, so
+  the task pane feels at home next to Excel's own chrome
+  instead of being a foreign slate-blue rectangle.
+*/
+@theme {
+  --color-excel-green: #107c41;
+  --color-excel-green-light: #21a366;
+  --color-excel-green-dark: #0d7239;
+  --color-excel-green-tint: #e8f5ee;
+  --color-excel-green-tint-2: #d4ebd9;
+}
+
 html,
 body,
 #root {
