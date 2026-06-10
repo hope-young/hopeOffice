@@ -45,7 +45,16 @@ export type SelectionContext =
  * Read the current selection out of the host. Returns a
  * Promise that resolves to a SelectionContext — resolves to
  * `{ kind: 'none' }` if the host is missing, doesn't expose
- * the API, or the call returns no data.
+ * the API, the call returns no data, OR the host's callback
+ * never fires (observed on some Excel 2605 builds in dev
+ * mode where the matrix API silently no-ops).
+ *
+ * The internal 1.5s timeout is critical: without it, a
+ * missing callback would hang the orchestrator's `send()`
+ * indefinitely, with no way for the user to escape because
+ * the orchestrator's `abort()` only cancels the chat
+ * stream, not the selection probe that runs *before* the
+ * stream. The timeout is the safety net.
  *
  * The `host` argument is currently unused — the cross-host
  * `getSelectedDataAsync(Matrix)` API works in Word, Excel,
@@ -56,6 +65,22 @@ export type SelectionContext =
 export async function captureSelection(
   _host?: HostKind,
 ): Promise<SelectionContext> {
+  // 1.5s is well above the synchronous round-trip the API
+  // takes on a healthy host (single-digit ms) but short
+  // enough that a hung callback is invisible to the user.
+  const SELECTION_TIMEOUT_MS = 1500
+  return Promise.race([
+    captureSelectionImpl(),
+    new Promise<SelectionContext>((resolve) =>
+      setTimeout(
+        () => resolve({ kind: 'none' }),
+        SELECTION_TIMEOUT_MS,
+      ),
+    ),
+  ])
+}
+
+async function captureSelectionImpl(): Promise<SelectionContext> {
   const office = (globalThis as { Office?: { context?: unknown } })
     .Office
   if (!office || !office.context) return { kind: 'none' }
