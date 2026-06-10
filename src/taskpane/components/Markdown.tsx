@@ -43,6 +43,12 @@ type Block =
   | { kind: 'paragraph'; text: string }
   | { kind: 'code'; lang: string; text: string }
   | { kind: 'list'; ordered: boolean; items: string[] }
+  | {
+      kind: 'table'
+      header: string[]
+      rows: string[][]
+      align: ('left' | 'center' | 'right')[]
+    }
 
 function parseBlocks(input: string): Block[] {
   const blocks: Block[] = []
@@ -103,6 +109,28 @@ function parseBlocks(input: string): Block[] {
       continue
     }
 
+    // GFM table — header row, separator row, then body rows.
+    // The separator row is `| --- | :---: | ---: |` and is the
+    // anchor we sniff to tell a real table apart from a paragraph
+    // that happens to contain a pipe (rare but possible).
+    if (
+      line.includes('|') &&
+      i + 1 < lines.length &&
+      /^\s*\|?\s*:?-{2,}:?\s*(\|\s*:?-{2,}:?\s*)+\|?\s*$/.test(lines[i + 1])
+    ) {
+      const header = splitTableRow(line)
+      const sep = lines[i + 1]
+      const align = parseTableAlign(sep)
+      i += 2
+      const rows: string[][] = []
+      while (i < lines.length && lines[i].includes('|') && lines[i].trim() !== '') {
+        rows.push(splitTableRow(lines[i]))
+        i++
+      }
+      blocks.push({ kind: 'table', header, rows, align })
+      continue
+    }
+
     // Paragraph — collect contiguous non-blank, non-special lines.
     const para: string[] = [line]
     i++
@@ -120,6 +148,41 @@ function parseBlocks(input: string): Block[] {
     blocks.push({ kind: 'paragraph', text: para.join('\n') })
   }
   return blocks
+}
+
+// ---------- Table helpers ----------
+
+/**
+ * Split a single `| a | b | c |` row into the cell strings.
+ * Leading and trailing pipes are tolerated but ignored, and
+ * cells with surrounding whitespace get trimmed. Empty
+ * cells (`||`) are preserved as `''` so the column count
+ * stays consistent with the header.
+ */
+function splitTableRow(line: string): string[] {
+  let s = line.trim()
+  if (s.startsWith('|')) s = s.slice(1)
+  if (s.endsWith('|')) s = s.slice(0, -1)
+  return s.split('|').map((c) => c.trim())
+}
+
+/**
+ * Parse the alignment markers from the separator row. Each
+ * column gets `left` (`:---`), `center` (`:---:`), `right`
+ * (`---:`), or `left` (plain `---`). Anything we don't
+ * understand falls back to left, which matches GFM.
+ */
+function parseTableAlign(
+  sep: string,
+): ('left' | 'center' | 'right')[] {
+  return splitTableRow(sep).map((cell) => {
+    const t = cell.trim()
+    const left = t.startsWith(':')
+    const right = t.endsWith(':')
+    if (left && right) return 'center'
+    if (right) return 'right'
+    return 'left'
+  })
 }
 
 // ---------- Inline parser ----------
@@ -330,6 +393,49 @@ export function Markdown({ source }: { source: string }) {
                   <li key={j}>{parseInline(escapeHtml(it))}</li>
                 ))}
               </Tag>
+            )
+          }
+          case 'table': {
+            const alignCls = (a: 'left' | 'center' | 'right'): string =>
+              a === 'center'
+                ? 'text-center'
+                : a === 'right'
+                  ? 'text-right'
+                  : 'text-left'
+            return (
+              <div
+                key={i}
+                className="my-3 overflow-x-auto rounded-lg border border-neutral-200"
+              >
+                <table className="w-full text-sm text-neutral-800">
+                  <thead className="bg-neutral-50">
+                    <tr>
+                      {b.header.map((cell, j) => (
+                        <th
+                          key={j}
+                          className={`border-b border-neutral-200 px-2.5 py-1.5 font-medium ${alignCls(b.align[j] ?? 'left')}`}
+                        >
+                          {parseInline(escapeHtml(cell))}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {b.rows.map((row, j) => (
+                      <tr key={j} className="even:bg-neutral-50/50">
+                        {row.map((cell, k) => (
+                          <td
+                            key={k}
+                            className={`border-t border-neutral-100 px-2.5 py-1.5 align-top ${alignCls(b.align[k] ?? 'left')}`}
+                          >
+                            {parseInline(escapeHtml(cell))}
+                          </td>
+                        ))}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             )
           }
         }
