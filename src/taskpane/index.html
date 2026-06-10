@@ -4,7 +4,37 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>hope-Office</title>
-    <script type="module" crossorigin src="/hopeOffice/assets/taskpane-CY7fx0MC.js"></script>
+    <!--
+      Office.js (a.k.a. the Office Add-ins JavaScript SDK) needs to be
+      loaded into the task pane iframe before any code touches
+      `Office.onReady` or `Office.context`. The host application
+      (Word, Excel, PowerPoint — both desktop and online) will
+      inject it on its own when the add-in is loaded from the
+      manifest's SourceLocation, but we've found at least one
+      common case where it does NOT:
+
+        - Sideloaded via `office-addin-debugging` on Windows
+          desktop Excel 2605+ (Current Channel).
+        - The task pane iframe renders, our app code runs, but
+          `typeof Office === 'undefined'` and
+          `window.parent.Office` is also missing. Without this
+          script the host detection falls through to
+          "unsupported" and the orchestrator can't pick the
+          right skill set for the host.
+
+      The official hosted URL is what every Microsoft sample
+      uses. It's stable, version-pinned at 1, and supports the
+      same v2 API surface we use (Office.onReady,
+      Office.context.host, Office.ribbon). Hosting it on a
+      third-party CDN would just be a stability risk; the
+      appsforoffice.microsoft.com host is the only one we
+      consider safe.
+    -->
+    <script
+      src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"
+      type="text/javascript"
+    ></script>
+    <script type="module" crossorigin src="/hopeOffice/assets/taskpane-BWxYauTf.js"></script>
     <link rel="stylesheet" crossorigin href="/hopeOffice/assets/taskpane-DvUZY27s.css">
   </head>
   <body>
