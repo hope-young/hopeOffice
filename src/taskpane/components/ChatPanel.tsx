@@ -7,7 +7,7 @@
  * rounded box with the send button tucked into the bottom-right
  * corner, a small footer disclaimer anchors the bottom.
  */
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { Message, ToolCall } from '@core/types'
 import { clearChatHistory, useChatStore } from '../store/chat'
 import { useSettingsStore } from '../store/settings'
@@ -26,6 +26,68 @@ export function ChatPanel() {
   const canSend =
     !isStreaming && input.trim().length > 0 && apiKey.length > 0
 
+  // ----- Auto-scroll to latest message -----
+  //
+  // We keep a ref to the message list and follow the canonical
+  // M365 Copilot rule: stick to the bottom while the user is
+  // already there, but back off the moment they scroll up to
+  // read history. The "↓ jump to latest" button is what bridges
+  // the gap — it surfaces an unread count while the user is
+  // scrolled away and jumps them back when they click it.
+  //
+  // Why "user has scrolled away" is sticky: once the user
+  // expresses intent to look at older messages, we should not
+  // yank them back to the bottom on every token streamed
+  // by the LLM. That's the worst of both worlds: the user
+  // loses their place AND loses the smoothness of streaming.
+  const listRef = useRef<HTMLDivElement>(null)
+  // 50px slack — close enough to "at the bottom" to feel
+  // intentional without snapping on every rounded edge.
+  const AT_BOTTOM_SLACK_PX = 50
+  const [isAtBottom, setIsAtBottom] = useState(true)
+  const [unreadCount, setUnreadCount] = useState(0)
+
+  useEffect(() => {
+    const el = listRef.current
+    if (!el) return
+    if (!isAtBottom) {
+      // User has scrolled away; do not disturb their reading
+      // position. They'll see the jump-to-latest button.
+      setUnreadCount((c) => c + 1)
+      return
+    }
+    el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' })
+  }, [
+    state.messages.length,
+    state.draft,
+    isStreaming,
+    isAtBottom,
+  ])
+
+  const onListScroll = (): void => {
+    const el = listRef.current
+    if (!el) return
+    const distanceFromBottom =
+      el.scrollHeight - el.scrollTop - el.clientHeight
+    if (distanceFromBottom <= AT_BOTTOM_SLACK_PX) {
+      // The user is back at the bottom (or close enough);
+      // clear the unread badge so the next streaming token
+      // can stick the scroll to the bottom.
+      if (!isAtBottom) setIsAtBottom(true)
+      if (unreadCount > 0) setUnreadCount(0)
+    } else {
+      if (isAtBottom) setIsAtBottom(false)
+    }
+  }
+
+  const jumpToLatest = (): void => {
+    const el = listRef.current
+    if (!el) return
+    setIsAtBottom(true)
+    setUnreadCount(0)
+    el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' })
+  }
+
   const onSend = (): void => {
     const text = input.trim()
     if (!text || isStreaming) return
@@ -43,7 +105,11 @@ export function ChatPanel() {
   return (
     <div className="flex h-full flex-col">
       {/* Message list */}
-      <div className="flex-1 overflow-y-auto px-4 py-4 space-y-5">
+      <div
+        ref={listRef}
+        onScroll={onListScroll}
+        className="relative flex-1 overflow-y-auto px-4 py-4 space-y-5"
+      >
         {state.messages.length === 0 && !state.draft && (
           <EmptyState hasApiKey={apiKey.length > 0} />
         )}
@@ -93,6 +159,38 @@ export function ChatPanel() {
               Clear history
             </button>
           </div>
+        )}
+
+        {/* "Jump to latest" affordance — surfaces when the user
+            has scrolled up to read history. Sticky to the
+            bottom-right of the message list so it sits just
+            above the input box. */}
+        {!isAtBottom && (
+          <button
+            type="button"
+            onClick={jumpToLatest}
+            aria-label="Jump to latest"
+            title="Jump to latest"
+            className="sticky bottom-2 left-1/2 z-10 ml-[-68px] flex h-7 w-[136px] -translate-x-0 items-center justify-center gap-1 rounded-full border border-neutral-200 bg-white px-3 text-xs font-medium text-neutral-700 shadow-sm transition-colors hover:border-neutral-300 hover:bg-neutral-50"
+          >
+            <svg
+              width="12"
+              height="12"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden="true"
+            >
+              <path d="M6 9l6 6 6-6" />
+            </svg>
+            <span>
+              Jump to latest
+              {unreadCount > 1 ? ` (${unreadCount})` : ''}
+            </span>
+          </button>
         )}
       </div>
 
