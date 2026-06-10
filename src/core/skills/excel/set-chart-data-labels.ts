@@ -65,9 +65,23 @@ export const setChartDataLabels: Skill<SetChartDataLabelsArgs, SetChartDataLabel
         chart = charts.items[0]
       }
       if (chart && !chart.isNullObject) {
-        chart.dataLabels.showValue = input.showValue
-        chart.dataLabels.position =
-          POSITION_MAP[input.position] as unknown as Excel.ChartDataLabelPosition
+        // The bare `Line` chart type in Excel doesn't support
+        // per-point data labels — only `LineMarkers` does.
+        // Surface that to the LLM with an actionable error so
+        // it can recover (re-create the chart as `LineMarkers`
+        // or pick a different style) instead of stalling.
+        try {
+          chart.dataLabels.showValue = input.showValue
+          chart.dataLabels.position =
+            POSITION_MAP[input.position] as unknown as Excel.ChartDataLabelPosition
+        } catch (e) {
+          throw new Error(
+            `This chart doesn't support per-point data labels in its current style. ` +
+              `Recreate the chart with chartType='line' (which maps to LineMarkers under the hood) ` +
+              `or pick a chartType that supports dataLabels (BarClustered, ColumnClustered, Pie). ` +
+              `Underlying Office error: ${(e as Error).message}`,
+          )
+        }
       }
       await context.sync()
       return { showValue: input.showValue, position: input.position }

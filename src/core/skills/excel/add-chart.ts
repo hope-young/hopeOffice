@@ -64,14 +64,22 @@ export const addChart: Skill<AddChartArgs, AddChartResult> = {
       // Map our friendly enum to the literal Office.js ChartType
       // values (`Excel.ChartType` is a TS string-literal union of
       // 70+ members — we accept four and assert the cast).
+      // `line` maps to `LineMarkers`, not `Line`, because the
+      // bare `Line` chart in Excel doesn't support per-point
+      // data labels — a frequent follow-up skill
+      // (`set-chart-data-labels`) is a no-op on `Line`. By
+      // going straight to `LineMarkers` we save the LLM a
+      // confusing tool-call error and match the "SCI paper
+      // look" the user is most likely to want when they
+      // ask for a line chart.
       const chartType = (
         {
-          line: 'Line',
+          line: 'LineMarkers',
           'bar-clustered': 'BarClustered',
           pie: 'Pie',
           'column-clustered': 'ColumnClustered',
         } as const
-      )[input.chartType] as 'Line'
+      )[input.chartType] as 'LineMarkers'
       const chart = sheet.charts.add(chartType, range, 'Auto')
       if (input.title) chart.title.text = input.title
       await context.sync()
