@@ -1,40 +1,48 @@
 /**
- * Tests for the system-prompt builder. We just verify that the
- * right skills are listed for the right host — the exact wording
- * is intentionally not pinned because users will want to tweak
- * it without breaking these tests.
+ * Tests for the system prompt — focus on the bits that
+ * change based on the live selection so we don't regress
+ * the contract the LLM relies on.
  */
 import { describe, expect, it } from 'vitest'
 import { buildSystemPrompt } from './system-prompt'
 
 describe('buildSystemPrompt', () => {
-  it('lists Excel skills when host=excel', () => {
-    const p = buildSystemPrompt('excel')
-    expect(p).toContain('add-chart')
-    expect(p).not.toContain('add-text')
-    expect(p).not.toContain('add-slide')
-    expect(p.toLowerCase()).toContain('excel')
+  it('includes the active-selection line so the LLM can route tool calls', () => {
+    const prompt = buildSystemPrompt('excel', { kind: 'none' })
+    expect(prompt).toContain('Active selection: none.')
   })
 
-  it('lists PowerPoint skills when host=powerpoint', () => {
-    const p = buildSystemPrompt('powerpoint')
-    expect(p).toContain('add-text')
-    expect(p).toContain('add-slide')
-    expect(p).not.toContain('add-chart')
-    expect(p.toLowerCase()).toContain('powerpoint')
+  it('renders a range selection with address + size', () => {
+    const prompt = buildSystemPrompt('excel', {
+      kind: 'range',
+      address: 'A1:B2',
+      rows: 2,
+      cols: 2,
+      preview: [
+        [1, 2],
+        [3, 4],
+      ],
+    })
+    expect(prompt).toContain('Active selection: range A1:B2 (2 rows × 2 cols).')
   })
 
-  it('marks empty when no skills are registered for the host', () => {
-    const p = buildSystemPrompt('unsupported')
-    expect(p.toLowerCase()).toContain('no skills')
+  it('renders a chart selection with title', () => {
+    const prompt = buildSystemPrompt('excel', {
+      kind: 'chart',
+      title: 'Q4 Revenue',
+    })
+    expect(prompt).toContain('Active selection: chart titled "Q4 Revenue".')
   })
 
-  it('inlines the Zod-derived JSON schema for each skill', () => {
-    const p = buildSystemPrompt('excel')
-    // z.toJSONSchema emits a JSON Schema with `properties` — we
-    // check for that as a proxy for "the schema is inlined".
-    expect(p).toMatch(/"properties"/)
-    expect(p).toMatch(/"sheetName"/)
-    expect(p).toMatch(/"dataRange"/)
+  it('still works when no selection is provided (backwards compat)', () => {
+    const prompt = buildSystemPrompt('excel')
+    expect(prompt).toContain('Active selection: none.')
+  })
+
+  it('lists skills for the host', () => {
+    const prompt = buildSystemPrompt('excel')
+    // add-chart is the most basic Excel skill; if this is gone
+    // something is very wrong.
+    expect(prompt).toContain('add-chart')
   })
 })

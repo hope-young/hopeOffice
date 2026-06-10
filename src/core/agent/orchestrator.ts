@@ -29,6 +29,7 @@ import type { ChatProvider, StreamChatOpts } from '../providers/interface'
 import type { AgentEvent, AgentState, HostKind } from '../types'
 import { toolsForHost } from './tools'
 import { buildSystemPrompt } from './system-prompt'
+import { captureSelection } from './selection'
 import { getMcpTools } from '../mcp/client'
 
 export type OrchestratorDeps = {
@@ -113,6 +114,16 @@ export class Orchestrator {
       // same-named tool without collision.
       const skillTools = toolsForHost(host)
       const mcpTools = await getMcpTools(this.deps.getMcpServers())
+      // Capture the user's current selection *before* we build
+      // the system prompt. The capture is async (the
+      // `getSelectedDataAsync` callback) and never throws —
+      // if the host is missing, doesn't expose the API, or
+      // returns an empty result, we get `{ kind: 'none' }`
+      // and the system prompt just says "Active selection:
+      // none." When the user has a range or chart selected,
+      // the LLM sees the address/size and can route the next
+      // tool call directly to it without asking.
+      const selection = await captureSelection(host)
       // Cast: @ai-sdk/mcp 1.0.46 ships a `providerOptions` field
       // typed as SharedV3ProviderOptions (Vercel AI SDK 6+),
       // but `streamText` in ai 5.0.196 expects SharedV2. Runtime
@@ -127,7 +138,7 @@ export class Orchestrator {
         // to keep the type relationship intact is a double cast
         // via `any`.
         tools: { ...skillTools, ...mcpTools } as any,
-        system: { content: buildSystemPrompt(host) },
+        system: { content: buildSystemPrompt(host, selection) },
         model: this.deps.getModel(),
         signal,
         maxSteps: 5,

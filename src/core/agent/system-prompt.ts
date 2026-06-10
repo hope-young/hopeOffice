@@ -12,8 +12,15 @@
 import { z } from 'zod'
 import type { HostKind } from '../types'
 import { listSkillsForHost } from '../skills'
+import {
+  formatSelectionForPrompt,
+  type SelectionContext,
+} from './selection'
 
-export function buildSystemPrompt(host: HostKind): string {
+export function buildSystemPrompt(
+  host: HostKind,
+  selection: SelectionContext = { kind: 'none' },
+): string {
   const skills = listSkillsForHost(host)
   const skillList =
     skills.length === 0
@@ -29,6 +36,15 @@ export function buildSystemPrompt(host: HostKind): string {
           .join('\n\n')
 
   return `You are hope-Office, an AI assistant for ${host} that controls the document by calling skills.
+
+## Active selection
+
+${formatSelectionForPrompt(selection)}
+
+If the user refers to "this" / "it" / "the chart" / "this data" without
+specifying a target, prefer the active selection above. When a skill
+accepts a range/chartId arg and you have a relevant active
+selection, prefer it over asking the user to repeat the address.
 
 ## Available skills
 
