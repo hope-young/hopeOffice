@@ -209,6 +209,15 @@ export function formatSelectionForPrompt(s: SelectionContext): string {
   switch (s.kind) {
     case 'range': {
       const where = s.address ?? `(${s.rows}×${s.cols})`
+      // A 1×1 selection (single cell) is rarely useful as a
+      // chart source — it has no second row to plot. Tell the
+      // LLM so it asks the user for a wider range instead of
+      // burning a tool call on `add-chart` with the cell.
+      if (s.rows === 1 && s.cols === 1) {
+        return `Active selection: single cell ${where}. ` +
+          `This is too small for add-chart (needs ≥2 rows); ` +
+          `either ask the user for a wider range, or expand the selection to the data extent (Ctrl+Shift+End).`
+      }
       return `Active selection: range ${where} (${s.rows} rows × ${s.cols} cols).`
     }
     case 'chart':

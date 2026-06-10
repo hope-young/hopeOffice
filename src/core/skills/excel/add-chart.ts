@@ -59,8 +59,39 @@ export const addChart: Skill<AddChartArgs, AddChartResult> = {
     }
 
     return await excelNs.run(async (context: Excel.RequestContext) => {
-      const sheet = context.workbook.worksheets.getItem(input.sheetName)
+      // Pull the list of sheet names up front so we can
+      // surface them in error messages — "ItemNotFound:
+      // Sheet1" is useless if the user is on "Q4-Data".
+      const sheets = context.workbook.worksheets
+      sheets.load('items/name')
+      await context.sync()
+      const sheetNames = sheets.items.map((s) => s.name).join(', ')
+      // Active-sheet name so the LLM can see what the user
+      // is actually looking at. Loaded by reference so the
+      // sync is cheap.
+      const active = context.workbook.worksheets.getActiveWorksheet()
+      active.load('name')
+
+      const sheet = sheets.getItemOrNullObject(input.sheetName)
+      await context.sync()
+      if (sheet.isNullObject) {
+        throw new Error(
+          `Worksheet "${input.sheetName}" does not exist. ` +
+            `Available sheets: [${sheetNames}]. Active sheet: "${active.name}". ` +
+            `Either pass sheetName to one of the available sheets, or omit it to target the active sheet.`,
+        )
+      }
+
       const range = sheet.getRange(input.dataRange)
+      range.load(['rowCount', 'columnCount'])
+      await context.sync()
+      if (range.rowCount < 2) {
+        throw new Error(
+          `dataRange "${input.dataRange}" must include at least 2 rows (a header row plus at least one data row). ` +
+            `Currently it has ${range.rowCount} row(s). For a 10-value line chart, pass something like "A1:B11" with a header in row 1.`,
+        )
+      }
+
       // Map our friendly enum to the literal Office.js ChartType
       // values (`Excel.ChartType` is a TS string-literal union of
       // 70+ members — we accept four and assert the cast).

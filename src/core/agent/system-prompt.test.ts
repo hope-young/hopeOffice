@@ -26,6 +26,18 @@ describe('buildSystemPrompt', () => {
     expect(prompt).toContain('Active selection: range A1:B2 (2 rows × 2 cols).')
   })
 
+  it('flags a 1x1 selection as too small for add-chart', () => {
+    const prompt = buildSystemPrompt('excel', {
+      kind: 'range',
+      address: 'A1',
+      rows: 1,
+      cols: 1,
+      preview: [['x']],
+    })
+    expect(prompt).toContain('Active selection: single cell A1.')
+    expect(prompt).toContain('needs ≥2 rows')
+  })
+
   it('renders a chart selection with title', () => {
     const prompt = buildSystemPrompt('excel', {
       kind: 'chart',
