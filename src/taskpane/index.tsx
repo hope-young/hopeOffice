@@ -33,19 +33,64 @@ type OfficeLike = {
   }
 }
 
+/**
+ * Locate the Office.js SDK on the current window, the parent frame,
+ * or the top frame. Returns the first one that exposes `onReady`.
+ *
+ * Order:
+ *   1. `window.Office` — desktop Office injects Office.js directly
+ *      into the task pane iframe, and Excel online puts the
+ *      manifest's SourceUrl into the same frame. Most installs land
+ *      here.
+ *   2. `window.Microsoft.Office` — legacy namespace used by some
+ *      older Office 2013 builds. Still common on locked-down
+ *      corporate images.
+ *   3. `window.parent.Office` — Excel online has been observed to
+ *      park Office.js on the host frame rather than the iframe.
+ *   4. `window.top.Office` — further-up fallback for nested iframes.
+ */
 function findOffice(): OfficeLike | undefined {
-  if (typeof Office !== 'undefined') {
-    return Office as unknown as OfficeLike
-  }
   if (typeof window === 'undefined') return undefined
   const w = window as unknown as {
-    parent?: { Office?: OfficeLike }
-    top?: { Office?: OfficeLike }
+    Office?: OfficeLike
+    Microsoft?: { Office?: OfficeLike }
+    parent?: { Office?: OfficeLike; Microsoft?: { Office?: OfficeLike } }
+    top?: { Office?: OfficeLike; Microsoft?: { Office?: OfficeLike } }
   }
-  return w.parent?.Office ?? w.top?.Office
+  return (
+    w.Office ??
+    w.Microsoft?.Office ??
+    w.parent?.Office ??
+    w.parent?.Microsoft?.Office ??
+    w.top?.Office ??
+    w.top?.Microsoft?.Office
+  )
 }
 
-const officeApi = findOffice()
+/**
+ * Wait up to `timeoutMs` for `findOffice()` to return something.
+ * Required because the `<script src=".../office.js">` tag we add in
+ * index.html loads asynchronously, so for a few hundred ms after
+ * React mounts there is no `Office` global on the page even
+ * though we asked for it. Polling is the simplest reliable way to
+ * bridge the gap; the alternative (waiting for the script's
+ * onload) doesn't fire when the script was already cached.
+ */
+async function waitForOffice(
+  timeoutMs = 3000,
+  intervalMs = 50,
+): Promise<OfficeLike | undefined> {
+  const start = Date.now()
+  // eslint-disable-next-line no-constant-condition
+  while (true) {
+    const o = findOffice()
+    if (o) return o
+    if (Date.now() - start > timeoutMs) return undefined
+    await new Promise((r) => setTimeout(r, intervalMs))
+  }
+}
+
+const officeApi = await waitForOffice()
 
 // Custom Tabs are hidden by default in sideloaded add-ins. The
 // manifest declares our tab as 'hopeOfficeTab'; we explicitly flip
