@@ -29,13 +29,32 @@
 
   <Id>1458732e-2964-4e0d-821e-2755bb07c22f</Id>
   <Version>1.0.0.0</Version>
-  <ProviderName>hope_young</ProviderName>
+  <ProviderName>hopeOffice</ProviderName>
   <DefaultLocale>en-US</DefaultLocale>
-  <DisplayName DefaultValue="hope-Office">
-    <Override Locale="zh-CN" Value="hope-Office" />
+  <!--
+    DisplayName deliberately doesn't match autoOffice's
+    "hope-Office" (with a hyphen). When a tenant has both
+    add-ins installed, the manifest GUID is the real
+    identity, but the *displayed* name in the My Add-ins
+    list, the AppSource, and the task-pane title bar all
+    match. Differentiating on DisplayName makes it obvious
+    to the user which one is which — and when the Office
+    ribbon shows the add-in's group, the tab name is
+    derived from the manifest's DisplayName, so a
+    "hopeOffice" (no hyphen) tab is visually distinct
+    from the autoOffice tab.
+
+    The " (2026)" suffix is a deliberate generation tag.
+    If we ship a v2, we'll bump the version, regenerate
+    the icons, and bump the suffix to " (2026.2)" — the
+    same pattern the macOS / iOS ecosystem uses to mark
+    "this is the supported build, not a 2023 fork".
+  -->
+  <DisplayName DefaultValue="hopeOffice (2026)">
+    <Override Locale="zh-CN" Value="hopeOffice (2026)" />
   </DisplayName>
-  <Description DefaultValue="AI assistant for Word, Excel, and PowerPoint. Local-first, BYO API key.">
-    <Override Locale="zh-CN" Value="Word/Excel/PPT 的 AI 助手。本地优先，自带 API key。" />
+  <Description DefaultValue="AI assistant for Word, Excel, and PowerPoint. Local-first, BYO API key. Generative chart formatting + skill registry + MCP tool calling.">
+    <Override Locale="zh-CN" Value="Word/Excel/PPT 的 AI 助手。本地优先，自带 API key。生成式图表格式化 + skill 注册 + MCP 工具调用。" />
   </Description>
   <IconUrl DefaultValue="https://hope-young.github.io/hopeOffice/assets/icon-32.png" />
   <HighResolutionIconUrl DefaultValue="https://hope-young.github.io/hopeOffice/assets/icon-64.png" />
